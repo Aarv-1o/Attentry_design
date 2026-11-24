@@ -4,8 +4,8 @@
 // attentry-design hook                   Claude Code's hooks (stage 1, the brief)
 // attentry-design mcp                    the stage tools for the agent
 import { parseArgs } from "node:util";
-import { closeBrowser, type RenderOptions } from "./render.ts";
-import { runCheck, runLock, runOptions, type StageResult } from "./stages.ts";
+import { closeBrowser } from "./render.ts";
+import { parseSize, runCheck, runLock, runOptions, type StageResult } from "./stages.ts";
 import { runHook } from "./hook.ts";
 import { runMcpServer } from "./mcp.ts";
 
@@ -59,12 +59,6 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
-function parseSize(s?: string): RenderOptions {
-  if (!s) return {};
-  const m = /^(\d+)x(\d+)$/.exec(s);
-  if (!m) throw new Error("--size is WxH, e.g. 1200x630.");
-  return { width: Number(m[1]), height: Number(m[2]) };
-}
 
 const [command] = process.argv.slice(2);
 if (command === "hook") {

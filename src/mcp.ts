@@ -7,7 +7,7 @@ import { z } from "zod";
 import manifest from "../package.json" with { type: "json" };
 import { closeBrowser } from "./render.ts";
 import { MAX_OPTIONS } from "./options.ts";
-import { runCheck, runLock, runOptions, type StageResult } from "./stages.ts";
+import { parseSize, runCheck, runLock, runOptions, type StageResult } from "./stages.ts";
 
 const INSTRUCTIONS = `Attentry Design checks the illustrations and videos you make, without AI. It checks quality, never taste.
 - Before the full drawing: draw 2–${MAX_OPTIONS} small options as files and call check_options. Redo what it flags, then let the person pick by number.
@@ -40,11 +40,6 @@ const TOOLS = {
   },
 } as const;
 
-const toSize = (s?: string) => {
-  if (!s) return {};
-  const [width, height] = s.split("x").map(Number);
-  return { width, height };
-};
 
 export function runMcpServer(project: string): void {
   const call = async (run: () => Promise<StageResult>) => {
@@ -59,9 +54,9 @@ export function runMcpServer(project: string): void {
   const annotations = { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
   serveStdio(() => {
     const server = new McpServer({ name: "attentry-design", version: manifest.version ?? "0.0.0" }, { instructions: INSTRUCTIONS });
-    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call(() => runOptions(project, a.files, toSize(a.size))));
-    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call(() => runLock(project, a.file, a.name, toSize(a.size))));
-    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call(() => runCheck(project, a.file, a.lock, toSize(a.size))));
+    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call(() => runOptions(project, a.files, parseSize(a.size))));
+    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call(() => runLock(project, a.file, a.name, parseSize(a.size))));
+    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call(() => runCheck(project, a.file, a.lock, parseSize(a.size))));
     return server;
   }, { onerror: (error) => process.stderr.write(`attentry-design mcp: ${error.message.replace(/\s+/g, " ").slice(0, 300)}\n`) });
   for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void closeBrowser().finally(() => process.exit(0)));
