@@ -1813,6 +1813,53 @@ For the five world styles (hand-drawn, flat vector, isometric, 3D look, pixel ar
 - **Change your perspective** (p. 82): rotate, flip or enlarge the art to see problems the eye has
   got used to. **Direction:** with Pixel Logic's 1x and blurred view.
 
+
+## Second reading: what the remaining chapters add
+
+(Pass 2 read the chapters not read closely in pass 1: Pixel Logic ch. 8–9, The Back of the
+Napkin's opening and framework chapters, Vector Basic Training outside ch. 4–5, and all of Make
+Your Own Pixel Art.)
+
+- **Visual tension** (Glitschka pp. 189–191): "how a shape relates to another shape within any given
+  design context is of equal or even greater importance" than the shape itself; "The circle is too
+  close to the edge of the green square. It unintentionally draws the eye to that area." The fix is
+  to move it clearly away or clearly past the edge. "Bad design, in general, is riddled with visual
+  tension." His lettering example lists letters "sitting on the edge" of and "touching the edge" of
+  others (p. 192). **Rule idea:** text or shapes within a hair of a neighbouring edge without
+  overlapping it (the GitHub test's labels touching their card borders). Measurable from element
+  boxes.
+- **Form before color** (Glitschka p. 179): "I never touch color until all of my base shapes and
+  form are completely dialed in." **Direction:** with Loomis's value plan first.
+- **Fresh eyes** (Glitschka p. 182): set the work aside, then look again; things blend together
+  after long looking. **Context:** the look-at-it step after a check.
+- **More thumbnails** (Glitschka p. 48): "You can never have too many thumbnails, but you can have
+  too few." **Context:** with Pyle and Gurney.
+- **Label everything** (Roam pp. 160–161): "It's always better to be proactive about labeling and
+  leave no doubt about what we're showing"; "So as a rule, spell it out right on the top, every
+  time." **Direction:** an explaining picture carries a title and labels its parts.
+- **A coordinate system first** (Roam p. 57): "Always define a basic coordinate system to give us
+  clear orientation and position." Time runs left to right (p. 198); a flowchart starts at the
+  first action (p. 216). **Direction:** for timelines and flows (branch & merge, a commit history).
+- **The fewest pictures** (Roam p. 165): "we should always show the fewest possible pictures to make
+  our point." **Direction:** one idea per panel; fewer panels over more.
+- **Who, what, where and when visible; how and why as the punch line** (Roam p. 43): "Make sure
+  that who/what, how much, where, and when are always visible; let how and why emerge as the visual
+  punch line." **Direction.**
+- **Too perfect looks wrong** (Dawe p. 157): "Things that are too perfect can end up looking wrong or
+  out of place, so a little damage adds realism." **Context:** with Gurney's pristine surfaces and
+  Goree's too smooth.
+- **Only the important parts pop out** (Dawe p. 100); distant things have fewer details (p. 101).
+  **Direction:** with Loomis on detail falling off with distance.
+- **Balance and consistency** (Dawe pp. 87–88): a figure needs believable posture "so the character
+  doesn't look as though it should tip over"; thicker lines are a style choice, "but you must be
+  consistent." **Rule idea:** with Pixel Logic's one line width.
+- **Charm points** (Dawe p. 116): "there always needs to be something to carry the character's
+  identity through". **Direction.**
+- **Animation, for video later** (Azzi pp. 215–229): "If your key frames are too alike, it's harder
+  for the audience to see what's happening" (p. 215); tweened frames left unedited make characters
+  "look robotic or 'tweened'" (p. 229); work on strong key frames first (p. 221). **Context:** with
+  The Illusion of Life and Richard Williams for the video rules.
+
 ---
 
 ## What the style books change
@@ -1833,5 +1880,8 @@ For the five world styles (hand-drawn, flat vector, isometric, 3D look, pixel ar
    isometric style.
 5. **Character size follows meaning** (Pixel Logic p. 95): the smallest part that must read sets the
    size, replacing a fixed grid count.
-6. **Still missing for the five styles:** books on isometric and on the 3D look; Stanchfield's
+6. **Visual tension** (Glitschka pp. 189–191, from the second reading): shapes or text almost
+   touching an edge read as a mistake; a clear gap or a clear overlap fixes it. The brief asks for
+   it; a check on element boxes is a rule idea.
+7. **Still missing for the five styles:** books on isometric and on the 3D look; Stanchfield's
    *Drawn to Life* for the hand-drawn figures.

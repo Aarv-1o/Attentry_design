@@ -20,7 +20,8 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    hand-drawn type): wrap each line in `<g data-text="the words">` so it can be measured. Draw each idea as the kind of picture it is: a
    thing as a portrait, an amount as a chart, a place as a map, a sequence as a timeline, a process
    as a flow with arrows (Roam's <6><6> rule). Size the main characters by the smallest part that
-   must read (an expression, a gesture). Pixel art: one pixel grid, no doubled sprites (mixels).
+   must read (an expression, a gesture). Give an explaining picture a title and label its parts;
+   keep text and shapes clearly away from edges or clearly overlapping them, never just touching. Pixel art: one pixel grid, no doubled sprites (mixels).
 3. **Lock.** Call `lock_design` with the chosen file, a short name and the style. A pixel-art lock
    is checked for pixel-sharp edges.
 4. **Finish.** Make it full size and call `check_design` with the file and the lock. Fix the
