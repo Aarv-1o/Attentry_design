@@ -15,7 +15,8 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    number.
    While drawing: build it around that one message. Plan the text first: one headline, labels
    clearly smaller (sizes at least 1.5× apart), and measure each line (characters × letter width)
-   against the frame so it stays inside a 5% margin. Make the main characters big enough to carry
+   against the frame so it stays inside a 5% margin. Lettering drawn as shapes (pixel art,
+   hand-drawn type): wrap each line in `<g data-text="the words">` so it can be measured. Make the main characters big enough to carry
    detail (in pixel art, about 24 grid squares tall or more).
 3. **Lock.** Call `lock_design` with the chosen file, a short name and the style. A pixel-art lock
    is checked for pixel-sharp edges.

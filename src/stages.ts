@@ -107,6 +107,7 @@ async function storyboardOf(project: string, entry: string, remotion: RemotionPr
     colors: [...new Set(frames.flatMap((f) => f.colors))],
     fonts: [...new Set(frames.flatMap((f) => f.fonts))],
     texts: [],
+    cut: [],
   };
 }
 

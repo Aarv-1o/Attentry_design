@@ -7,6 +7,7 @@ import { z } from "zod";
 import manifest from "../package.json" with { type: "json" };
 import { closeBrowser } from "./render.ts";
 import { closeRemotion } from "./remotion.ts";
+import { closeOcr } from "./lettering.ts";
 import { MAX_OPTIONS } from "./options.ts";
 import { parseSize, runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
 
@@ -41,7 +42,7 @@ const TOOLS = {
   },
   check_design: {
     title: "Check the finished design",
-    description: "Call on a finished design (SVG or HTML). Errors to fix: text contrast below WCAG, text cut off or at the edge, colors or fonts outside the lock. Suggestions: the AI defaults (dead-center subject, everything mid-grey, too saturated, raw red, yellow and blue together). Each with its source.",
+    description: "Call on a finished design: SVG, HTML, or a generated image (PNG, JPG, WebP). Errors to fix: text contrast below WCAG, text cut off or at the edge (including lettering drawn as shapes, marked with data-text, or found in the pixels by OCR), colors or fonts outside the lock, smoothed edges in pixel art. Suggestions: no clear headline, shapes cut by the frame, and the AI defaults (dead-center subject, everything mid-grey, too saturated, raw red, yellow and blue together). Each with its source.",
     inputSchema: z.object({ file: FILE, lock: NAME.optional().describe("The lock to hold it to."), size: SIZE }),
   },
   check_video_options: {
@@ -82,6 +83,6 @@ export function runMcpServer(project: string): void {
     server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call(() => runVideoCheck(project, a.entry, a.composition, a.lock)));
     return server;
   }, { onerror: (error) => process.stderr.write(`attentry-design mcp: ${error.message.replace(/\s+/g, " ").slice(0, 300)}\n`) });
-  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void Promise.all([closeBrowser(), closeRemotion()]).finally(() => process.exit(0)));
-  process.stdin.on("close", () => void Promise.all([closeBrowser(), closeRemotion()]));
+  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void Promise.all([closeBrowser(), closeRemotion(), closeOcr()]).finally(() => process.exit(0)));
+  process.stdin.on("close", () => void Promise.all([closeBrowser(), closeRemotion(), closeOcr()]));
 }

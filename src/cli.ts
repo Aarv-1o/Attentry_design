@@ -6,6 +6,7 @@
 import { parseArgs } from "node:util";
 import { closeBrowser } from "./render.ts";
 import { closeRemotion } from "./remotion.ts";
+import { closeOcr } from "./lettering.ts";
 import { parseSize, runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
 import { runHook } from "./hook.ts";
 import { runMcpServer } from "./mcp.ts";
@@ -92,5 +93,5 @@ if (command === "hook") {
       console.error(e.message);
       process.exitCode = 1;
     })
-    .finally(() => Promise.all([closeBrowser(), closeRemotion()]));
+    .finally(() => Promise.all([closeBrowser(), closeRemotion(), closeOcr()]));
 }

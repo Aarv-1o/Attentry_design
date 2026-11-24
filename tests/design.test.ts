@@ -9,8 +9,9 @@ import { measure } from "../src/measure.ts";
 import { compareOptions, contactSheet, MAX_OPTIONS } from "../src/options.ts";
 import { readLock, writeLock } from "../src/lock.ts";
 import { check } from "../src/check.ts";
+import { closeOcr } from "../src/lettering.ts";
 
-after(closeBrowser);
+after(() => Promise.all([closeBrowser(), closeOcr()]));
 
 const fixture = (name: string) => join(import.meta.dirname, "fixtures", name);
 const cache = new Map<string, Promise<Rendered>>();
@@ -114,6 +115,25 @@ test("a pixel-art lock: crisp pixels pass, smoothed edges are caught", async () 
   // Without a pixel-art style, smooth edges are nobody's business.
   await writeLock(project, "flat", crisp, await measure(crisp.png), "flat 2D");
   assert.ok(!(await check(smooth, await measure(smooth.png), await readLock(project, "flat"))).some((f) => f.rule === "pixel-edges"));
+});
+
+test("lettering drawn as shapes and marked with data-text is measured like text", async () => {
+  const r = await load("drawn-label-edge.svg");
+  const drawn = r.texts.find((t) => t.source === "drawn")!;
+  assert.equal(drawn.text, "OK");
+  assert.equal(drawn.color, "rgb(58, 42, 32)");
+  const found = await check(r, await measure(r.png));
+  assert.ok(found.some((f) => f.rule === "text-margin" && f.message.startsWith('"OK"')));
+  assert.ok(found.some((f) => f.rule === "shapes-cut" && f.message.startsWith("1 small shape")), "the dot, not the full-bleed background");
+});
+
+test("OCR finds lettering in a generated image: a label at the edge", { timeout: 60_000 }, async () => {
+  const r = await load("github-pixel-final.png");
+  assert.deepEqual(r.texts, []);
+  const found = await check(r, await measure(r.png));
+  const edges = found.filter((f) => f.rule === "text-margin");
+  assert.ok(edges.some((f) => f.message.includes('"MERGE"')), JSON.stringify(found));
+  assert.ok(edges.every((f) => f.message.startsWith("Lettering in the picture")));
 });
 
 test("lock names can't escape the lock folder", async () => {

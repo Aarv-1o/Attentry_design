@@ -1,7 +1,7 @@
 // Builds Attentry Design into one file, claude-plugin/attentry-design/dist/attentry-design.mjs:
-// what the plugin's hook and MCP server run (plain `node`, no TypeScript loader). sharp and
-// playwright-core stay outside the bundle (native code and a browser driver); they resolve from the
-// nearest node_modules. Shipping them with the plugin is the packaging step (attentry-design.md).
+// what the plugin's hook and MCP server run (plain `node`, no TypeScript loader). sharp,
+// playwright-core and tesseract.js stay outside the bundle (native code, a browser driver, OCR
+// workers and data); they resolve from the nearest node_modules. Shipping them with the plugin is the packaging step (attentry-design.md).
 import { build } from "esbuild";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,7 @@ await build({
   platform: "node",
   format: "esm",
   target: "node22",
-  external: ["sharp", "playwright-core"],
+  external: ["sharp", "playwright-core", "tesseract.js", "@tesseract.js-data/eng"],
   banner: {
     js: [
       "#!/usr/bin/env node",

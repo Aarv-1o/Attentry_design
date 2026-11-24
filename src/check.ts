@@ -6,6 +6,7 @@ import type { Rendered, TextBox } from "./render.ts";
 import type { Measures } from "./measure.ts";
 import { toHex, type DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
+import { findLettering } from "./lettering.ts";
 
 const SAFE_MARGIN = 0.04; // of the shorter side
 
@@ -23,13 +24,25 @@ const toRgb = converter("rgb");
 
 export async function check(rendered: Rendered, m: Measures, lock?: DesignLock): Promise<Finding[]> {
   const findings: Finding[] = [];
-  for (const t of rendered.texts) {
-    findings.push(...(await contrastFinding(rendered, t)), ...edge(rendered, t));
+  // Real text and marked lettering are exact; lettering OCR finds in the pixels is less certain, so
+  // it gets the edge and size checks but not contrast (its color is an estimate).
+  const lettering = await findLettering(rendered.png, rendered.texts);
+  const texts = [...rendered.texts, ...lettering];
+  for (const t of texts) {
+    if (t.source !== "ocr") findings.push(...(await contrastFinding(rendered, t)));
+    findings.push(...edge(rendered, t));
+  }
+  if (rendered.cut.length) {
+    findings.push({
+      rule: "shapes-cut",
+      kind: "default",
+      message: `${rendered.cut.length} small shape${rendered.cut.length === 1 ? "" : "s"} run past the edge of the picture. If that isn't on purpose, move ${rendered.cut.length === 1 ? "it" : "them"} inside the frame.`,
+    });
   }
 
   if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...(await pixelEdges(rendered, lock)));
 
-  findings.push(...hierarchy(rendered.texts));
+  findings.push(...hierarchy(texts));
 
   if (m.centered && !lock?.composition.centered) {
     findings.push({
@@ -110,15 +123,16 @@ function clip(b: TextBox["box"], r: Picture) {
 /** Text cut by the frame, or inside the safe margin (a share of the shorter side). */
 export function edge(r: Picture, t: TextBox, margin = SAFE_MARGIN): Finding[] {
   const { x, y, width, height } = t.box;
-  if (x < 0 || y < 0 || x + width > r.width || y + height > r.height) {
-    return [{ rule: "text-cut", kind: "error", message: `"${short(t.text)}" is cut off by the edge of the picture.` }];
+  const touch = t.source === "ocr" ? 2 : 0; // OCR can't see past the frame: touching it is cut
+  if (x < touch || y < touch || x + width > r.width - touch || y + height > r.height - touch) {
+    return [{ rule: "text-cut", kind: "error", message: `${what(t)} is cut off by the edge of the picture.` }];
   }
   const m = margin * Math.min(r.width, r.height);
   if (x < m || y < m || x + width > r.width - m || y + height > r.height - m) {
     return [{
       rule: "text-margin",
       kind: "error",
-      message: `"${short(t.text)}" sits within ${Math.round(m)}px of the edge, where it can be cropped or crowded. Move it in.`,
+      message: `${what(t)} sits within ${Math.round(m)}px of the edge, where it can be cropped or crowded. Move it in.`,
     }];
   }
   return [];
@@ -179,6 +193,11 @@ export function hierarchy(texts: TextBox[]): Finding[] {
     message: `${sizes.length} texts, all about the same size (${Math.round(sizes[0])}–${Math.round(biggest)} px): nothing reads first. Make one headline at least ${HEADLINE_LEAD}× the labels.`,
     source: "Williams, The Non-Designer's Design Book: contrast must be strong; Attentry Design rules R4",
   }];
+}
+
+/** How a finding names a text: OCR's reading is a guess, so it says where the words were found. */
+function what(t: TextBox): string {
+  return t.source === "ocr" ? `Lettering in the picture (read as "${short(t.text)}")` : `"${short(t.text)}"`;
 }
 
 export function short(s: string): string {

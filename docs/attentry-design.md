@@ -85,8 +85,16 @@ too briefly, too small, low contrast, outside the safe area; a still shot; text 
 camera move; no hook in the first second; no end card. Storyboard options in stage 2 use the same
 diversity measures per key frame.
 
-Later: generated images (pixels only: lettering through OCR, hot skin, two eye levels), more
-direction cards, copy.
+Added 2026-11-24 after the person's pixel-art test, where labels ran off the frame unseen because
+they were drawn as squares: lettering is read three ways. Real text exactly; lettering drawn as
+shapes exactly, when the agent marks each line with `<g data-text="…">` (the brief asks it to);
+and anything else, including generated images (PNG, JPG, WebP now accepted), with OCR
+(tesseract.js and its English data installed locally, confident readings of 3+ letters only, used
+for the edge and size checks, not contrast). Also new: no clear headline (three or more texts
+within 1.5x of each other) and small shapes cut by the frame, both suggestions.
+
+Later: hot skin and two eye levels in generated images, OCR on video frames, more direction
+cards, copy.
 
 ## Tech stack (agreed 2026-11-24)
 

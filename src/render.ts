@@ -4,6 +4,7 @@
 import { chromium, type Browser } from "playwright-core";
 import { pathToFileURL } from "node:url";
 import { extname } from "node:path";
+import sharp from "sharp";
 
 export interface Box {
   x: number;
@@ -21,6 +22,9 @@ export interface TextBox {
   opacity: number; // effective, with every ancestor's opacity multiplied in
   bold: boolean;
   box: Box;
+  // Where it came from: real text, lettering drawn as shapes and marked with data-text, or read
+  // from the pixels by OCR (a fallback, less certain).
+  source?: "text" | "drawn" | "ocr";
 }
 
 export interface Rendered {
@@ -31,6 +35,7 @@ export interface Rendered {
   colors: string[]; // every visible fill, stroke, text, background and gradient color
   fonts: string[]; // first family of every font in use
   texts: TextBox[];
+  cut: Box[]; // small painted shapes that run past the frame's edge
 }
 
 // One browser for the whole run, shared by every render (launched once even when renders start
@@ -63,7 +68,14 @@ export interface RenderOptions {
   height?: number;
 }
 
+const RASTER = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
+
 export async function render(file: string, options: RenderOptions = {}): Promise<Rendered> {
+  // A generated image is only pixels: nothing to read from a source, lettering comes from OCR.
+  if (RASTER.has(extname(file).toLowerCase())) {
+    const { data, info } = await sharp(file).png().toBuffer({ resolveWithObject: true });
+    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [] };
+  }
   const page = await (await getBrowser()).newPage({
     viewport: { width: options.width ?? 1200, height: options.height ?? 800 },
   });
@@ -75,7 +87,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
     await page.evaluate("document.fonts.ready");
     const viewport = page.viewportSize()!;
     const png = await page.screenshot({ type: "png" });
-    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts">;
+    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut">;
     return { file, png, width: viewport.width, height: viewport.height, ...read };
   } finally {
     await page.close();
@@ -96,8 +108,28 @@ const SVG_SIZE = `(() => {
 export const READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
-  const colors = new Set(), fonts = new Set(), texts = [];
+  const colors = new Set(), fonts = new Set(), texts = [], cut = [];
+  const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
+  const opacityOf = (el) => { let o = 1; for (let e = el; e; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+  // Lettering drawn as shapes (pixel art, hand-drawn type): the agent marks each line with
+  // data-text="the words". Its box is the group's; its color is the group's most used fill; its
+  // size is font-size equivalent (a capital's height is about 0.72 of the font size).
+  for (const el of document.querySelectorAll("[data-text]")) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    const count = new Map();
+    for (const s of el.querySelectorAll("*")) {
+      const f = getComputedStyle(s).fill;
+      if (PAINTS.has(s.tagName.toLowerCase()) && visible(f)) count.set(f, (count.get(f) || 0) + 1);
+    }
+    const color = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] || getComputedStyle(el).fill || "#000";
+    texts.push({
+      text: el.getAttribute("data-text"), color, fontFamily: "(drawn)", fontSize: r.height / 0.72,
+      size: r.height / 0.72, opacity: opacityOf(el), bold: false, source: "drawn",
+      box: { x: r.x, y: r.y, width: r.width, height: r.height },
+    });
+  }
   for (const el of document.querySelectorAll("*")) {
     const style = getComputedStyle(el);
     if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") continue;
@@ -110,6 +142,11 @@ export const READ_DESIGN = `(() => {
       // A <line> has no inside, so its fill (black by default) is never painted.
       const paints = el.tagName.toLowerCase() === "line" ? [style.stroke] : [style.fill, style.stroke];
       for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
+      const r = el.getBoundingClientRect();
+      const small = r.width * r.height < 0.02 * vw * vh;
+      if (small && r.width > 0 && (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) && cut.length < 200) {
+        cut.push({ x: r.x, y: r.y, width: r.width, height: r.height });
+      }
     } else {
       if (visible(style.backgroundColor)) colors.add(style.backgroundColor);
       if (parseFloat(style.borderTopWidth) > 0 && visible(style.borderTopColor)) colors.add(style.borderTopColor);
@@ -123,15 +160,14 @@ export const READ_DESIGN = `(() => {
     colors.add(color);
     const family = style.fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
     fonts.add(family);
-    let opacity = 1;
-    for (let e = el; e; e = e.parentElement) opacity *= parseFloat(getComputedStyle(e).opacity);
+    const opacity = opacityOf(el);
     const scale = !svg && el.offsetHeight ? r.height / el.offsetHeight : 1;
     texts.push({
       text: own, color, fontFamily: family,
       fontSize: parseFloat(style.fontSize), size: parseFloat(style.fontSize) * scale, opacity,
-      bold: parseInt(style.fontWeight, 10) >= 600,
+      bold: parseInt(style.fontWeight, 10) >= 600, source: "text",
       box: { x: r.x, y: r.y, width: r.width, height: r.height },
     });
   }
-  return { colors: [...colors], fonts: [...fonts], texts };
+  return { colors: [...colors], fonts: [...fonts], texts, cut };
 })()`;
