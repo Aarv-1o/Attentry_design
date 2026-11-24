@@ -8,6 +8,7 @@ import type { Measures, Value } from "./measure.ts";
 
 export interface DesignLock {
   name: string;
+  style?: string; // the world style the person chose: stick figure, flat 2D, 3D, pixel art…
   from: string; // the option it was locked from, relative to the project
   size: { width: number; height: number };
   colors: string[]; // hex, exactly as the source uses them
@@ -29,9 +30,10 @@ export function toHex(color: string): string | undefined {
   return c ? formatHex(c) : undefined;
 }
 
-export async function writeLock(project: string, name: string, rendered: Rendered, m: Measures): Promise<string> {
+export async function writeLock(project: string, name: string, rendered: Rendered, m: Measures, style?: string): Promise<string> {
   const lock: DesignLock = {
     name,
+    ...(style ? { style } : {}),
     from: relative(project, rendered.file).replaceAll("\\", "/"),
     size: { width: rendered.width, height: rendered.height },
     colors: [...new Set(rendered.colors.map(toHex).filter((h): h is string => !!h))],

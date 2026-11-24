@@ -80,9 +80,9 @@ export async function brief(prompt: string, project: string): Promise<string | u
       : "draw each option small, as its own SVG or HTML file");
   return [
     `Attentry Design: this is ${kind === "illustration" ? "an" : "a"} ${kind} request. Before drawing:`,
-    "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: what it's for, who sees it, where it's used and at what size, the exact text, the mood, anything it must have or avoid. If they skip or decline the questions, don't stop: choose sensible answers yourself, state them in one line, and go on to the options, where they choose by looking.",
-    `2. Options. Then ${options}: 2–3 for something small, up to ${MAX_OPTIONS} for a key piece. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette. Call ${tools.check_options}, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
-    `3. Lock. Call ${tools.lock} and a short name.`,
+    "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: what it's for, who sees it, where it's used and at what size, the style of the world (stick figure, flat 2D, 3D, pixel art, or another), the exact text, the mood, anything it must have or avoid. If they skip or decline the questions, don't stop: choose sensible answers yourself, state them in one line, and go on to the options, where they choose by looking.",
+    `2. Options. Then ${options}: 2–3 for something small, up to ${MAX_OPTIONS} for a key piece. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette; if the person didn't choose a style, let them differ in style too (stick figure, flat 2D, 3D, pixel art). Call ${tools.check_options}, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
+    `3. Lock. Call ${tools.lock}, a short name and the style.`,
     `4. Finish. Make it in full, call ${tools.check} and the lock, fix the errors, and mention the suggestions without forcing them.`,
     "5. End with a short design card: what was made, the lock, and what was found and fixed.",
     "Attentry Design checks quality, not taste: the person's choices win.",

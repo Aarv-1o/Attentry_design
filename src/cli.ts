@@ -12,7 +12,7 @@ import { runMcpServer } from "./mcp.ts";
 
 const USAGE = `Usage:
   attentry-design options <file> <file> [… up to 5] [--out sheet.png]
-  attentry-design lock <file> --name <name>
+  attentry-design lock <file> --name <name> [--style "pixel art"]
   attentry-design check <file> [--lock <name>]
   attentry-design video-options <entry> <composition> <composition> [… up to 5]
   attentry-design video-lock <entry> <composition> --name <name>
@@ -30,6 +30,7 @@ async function main(argv: string[]): Promise<number> {
       out: { type: "string" },
       name: { type: "string" },
       lock: { type: "string" },
+      style: { type: "string" },
       size: { type: "string" },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
@@ -49,7 +50,7 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     case "lock":
       if (files.length !== 1 || !values.name) throw new Error("lock takes one file and --name.");
-      print(await runLock(project, files[0], values.name, size));
+      print(await runLock(project, files[0], values.name, size, values.style));
       return 0;
     case "check": {
       if (files.length !== 1) throw new Error("check takes one file.");
@@ -64,7 +65,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case "video-lock":
       if (files.length !== 2 || !values.name) throw new Error("video-lock takes an entry, a composition and --name.");
-      print(await runVideoLock(project, files[0], files[1], values.name));
+      print(await runVideoLock(project, files[0], files[1], values.name, values.style));
       return 0;
     case "video-check": {
       if (files.length !== 2) throw new Error("video-check takes an entry and a composition.");

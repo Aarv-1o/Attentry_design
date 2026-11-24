@@ -15,6 +15,7 @@ export interface Picture {
   width: number;
   height: number;
 }
+const PIXEL_COLORS = 64; // distinct colors above which edges are smoothed, not pixel art
 const OFF_PALETTE = 0.03; // OKLab distance that still counts as the same color
 const oklab = differenceEuclidean("oklab");
 const toRgb = converter("rgb");
@@ -25,7 +26,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     findings.push(...(await contrastFinding(rendered, t)), ...edge(rendered, t));
   }
 
-  if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock));
+  if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...(await pixelEdges(rendered, lock)));
 
   if (m.centered && !lock?.composition.centered) {
     findings.push({
@@ -141,6 +142,23 @@ export function offLock(colors: string[], fonts: string[], lock: DesignLock): Fi
     });
   }
   return out;
+}
+
+/**
+ * A pixel-art lock: every edge stays on the pixel grid. Smoothed (anti-aliased) edges blend
+ * neighbouring colors into hundreds of in-between ones; real pixel art uses a few dozen at most.
+ */
+export async function pixelEdges(p: Picture, lock: DesignLock): Promise<Finding[]> {
+  if (!/pixel/i.test(lock.style ?? "")) return [];
+  const { data } = await sharp(p.png).flatten({ background: "#ffffff" }).raw().toBuffer({ resolveWithObject: true });
+  const colors = new Set<number>();
+  for (let i = 0; i < data.length; i += 3) colors.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
+  if (colors.size <= PIXEL_COLORS) return [];
+  return [{
+    rule: "pixel-edges",
+    kind: "error",
+    message: `The "${lock.name}" lock is pixel art, but the picture has ${colors.size} distinct colors: edges are smoothed, not pixel-sharp. Draw on whole pixels and add shape-rendering="crispEdges" (SVG) or image-rendering: pixelated (CSS).`,
+  }];
 }
 
 export function short(s: string): string {

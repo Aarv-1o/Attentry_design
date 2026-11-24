@@ -94,6 +94,20 @@ test("lock: the locked design passes; a drifted one is caught for color and font
   assert.ok(found.includes("off-lock-fonts"));
 });
 
+test("a pixel-art lock: crisp pixels pass, smoothed edges are caught", async () => {
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  const crisp = await load("pixel-crisp.svg");
+  await writeLock(project, "cowboy", crisp, await measure(crisp.png), "pixel art");
+  const lock = await readLock(project, "cowboy");
+  assert.equal(lock.style, "pixel art");
+  assert.ok(!(await check(crisp, await measure(crisp.png), lock)).some((f) => f.rule === "pixel-edges"));
+  const smooth = await load("pixel-smooth.svg");
+  assert.ok((await check(smooth, await measure(smooth.png), lock)).some((f) => f.rule === "pixel-edges"));
+  // Without a pixel-art style, smooth edges are nobody's business.
+  await writeLock(project, "flat", crisp, await measure(crisp.png), "flat 2D");
+  assert.ok(!(await check(smooth, await measure(smooth.png), await readLock(project, "flat"))).some((f) => f.rule === "pixel-edges"));
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });

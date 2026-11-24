@@ -30,9 +30,9 @@ the brief, the options and the finished render, not every edit.
 
 | Stage | When | What happens | How (Claude Code) |
 |---|---|---|---|
-| **1. Brief** | The person asks for a design | Attentry Design recognizes a design request and gives the agent the questions to ask (occasion, audience, size, exact text, mood, must-haves) and the project's palette and fonts if any. The agent asks the person before drawing. | `UserPromptSubmit` hook adds the brief; the agent asks with its question tool |
+| **1. Brief** | The person asks for a design | Attentry Design recognizes a design request and gives the agent the questions to ask (occasion, audience, size, the world style: stick figure, flat 2D, 3D or pixel art, exact text, mood, must-haves) and the project's palette and fonts if any. The agent asks the person before drawing. | `UserPromptSubmit` hook adds the brief; the agent asks with its question tool |
 | **2. Options** | Before the full drawing | The agent makes up to 5 small options (thumbnails for an illustration, 4–6 key frames each for a video), the count set by the request. Attentry Design renders them into one contact sheet and checks they really differ. | MCP tool `check_options` |
-| **3. Lock** | The person picks one | The choice is saved as a design lock: palette, composition type, value plan, light direction, fonts, text, size. | MCP tool `lock_design`, file `.attentry-design/<name>.lock.json` |
+| **3. Lock** | The person picks one | The choice is saved as a design lock: style, palette, composition type, value plan, light direction, fonts, text, size. If no style was chosen, the options differ in style too. A pixel-art lock is checked for pixel-sharp edges (smoothing turns a handful of colors into hundreds); other styles are taste and aren't checked. | MCP tool `lock_design`, file `.attentry-design/<name>.lock.json` |
 | **4. Finish** | The agent draws it full size | Attentry Design renders it, checks errors (to fix) and defaults (suggestions), and compares it with the lock. | MCP tool `check_design` |
 | **5. Card** | End of the task | A design card in the chat: the image or frame strip, the lock, what was found and fixed, each finding with its source. | Rendered PNG plus markdown |
 

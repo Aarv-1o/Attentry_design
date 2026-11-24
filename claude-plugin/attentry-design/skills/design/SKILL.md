@@ -4,15 +4,17 @@ description: Make an illustration or a video with Attentry Design's stages (brie
 ---
 
 1. **Brief.** Ask the person, in one round with your question tool, only what they didn't say:
-   what it's for, who sees it, where it's used and at what size, the exact text, the mood, and
-   anything it must have or avoid. If they skip or decline the questions, don't stop: choose
-   sensible answers yourself, state them in one line, and go on to the options, where they choose
-   by looking.
+   what it's for, who sees it, where it's used and at what size, the style of the world (stick
+   figure, flat 2D, 3D, pixel art, or another), the exact text, the mood, and anything it must
+   have or avoid. If they skip or decline the questions, don't stop: choose sensible answers
+   yourself, state them in one line, and go on to the options, where they choose by looking.
 2. **Options.** Draw 2–5 small options as separate SVG or HTML files (for a video, one storyboard
-   file per option with 4–6 key frames). Make them differ in composition, value plan and palette.
-   Call Attentry Design's `check_options` with the files and redo what it flags. Then show the
-   person the contact sheet and ask which one, by number.
-3. **Lock.** Call `lock_design` with the chosen file and a short name.
+   file per option with 4–6 key frames). Make them differ in composition, value plan and palette,
+   and in style if the person didn't choose one. Call Attentry Design's `check_options` with the
+   files and redo what it flags. Then show the person the contact sheet and ask which one, by
+   number.
+3. **Lock.** Call `lock_design` with the chosen file, a short name and the style. A pixel-art lock
+   is checked for pixel-sharp edges.
 4. **Finish.** Make it full size and call `check_design` with the file and the lock. Fix the
    errors. Mention the suggestions; don't force them.
 5. **Card.** End with a short design card: the file, the lock, and what was found and fixed.

@@ -50,16 +50,16 @@ async function optionsOf(project: string, rendered: Rendered[], out?: string): P
   };
 }
 
-export async function runLock(project: string, file: string, name: string, size: RenderOptions = {}): Promise<StageResult> {
-  return lockOf(project, await render(inProject(project, file), size), name);
+export async function runLock(project: string, file: string, name: string, size: RenderOptions = {}, style?: string): Promise<StageResult> {
+  return lockOf(project, await render(inProject(project, file), size), name, style);
 }
 
-async function lockOf(project: string, rendered: Rendered, name: string): Promise<StageResult> {
+async function lockOf(project: string, rendered: Rendered, name: string, style?: string): Promise<StageResult> {
   const m = await measure(rendered.png);
-  const path = await writeLock(project, name, rendered, m);
+  const path = await writeLock(project, name, rendered, m, style);
   const lock = await readLock(project, name);
   return {
-    text: `Locked "${name}" from ${shown(project, rendered.file)} (${shown(project, path)}): colors ${lock.colors.join(", ")}; fonts ${lock.fonts.join(", ") || "none"}; ${lock.size.width}×${lock.size.height}. Check the finished design with check_design and lock "${name}".`,
+    text: `Locked "${name}"${style ? ` (${style})` : ""} from ${shown(project, rendered.file)} (${shown(project, path)}): colors ${lock.colors.join(", ")}; fonts ${lock.fonts.join(", ") || "none"}; ${lock.size.width}×${lock.size.height}. Check the finished design with check_design and lock "${name}".`,
     findings: [],
     data: { lock: path },
   };
@@ -118,8 +118,8 @@ export async function runVideoOptions(project: string, entry: string, ids: strin
   });
 }
 
-export async function runVideoLock(project: string, entry: string, id: string, name: string): Promise<StageResult> {
-  return withVideo(project, entry, async (remotion, find) => lockOf(project, await storyboardOf(project, entry, remotion, find(id)), name));
+export async function runVideoLock(project: string, entry: string, id: string, name: string, style?: string): Promise<StageResult> {
+  return withVideo(project, entry, async (remotion, find) => lockOf(project, await storyboardOf(project, entry, remotion, find(id)), name, style));
 }
 
 export async function runVideoCheck(project: string, entry: string, id: string, lockName?: string): Promise<StageResult> {
