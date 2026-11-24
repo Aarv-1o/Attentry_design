@@ -6,17 +6,21 @@ import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { z } from "zod";
 import manifest from "../package.json" with { type: "json" };
 import { closeBrowser } from "./render.ts";
+import { closeRemotion } from "./remotion.ts";
 import { MAX_OPTIONS } from "./options.ts";
-import { parseSize, runCheck, runLock, runOptions, type StageResult } from "./stages.ts";
+import { parseSize, runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
 
 const INSTRUCTIONS = `Attentry Design checks the illustrations and videos you make, without AI. It checks quality, never taste.
 - Before the full drawing: draw 2–${MAX_OPTIONS} small options as files and call check_options. Redo what it flags, then let the person pick by number.
 - When the person picks: call lock_design with that file.
-- When the design is finished: call check_design (with the lock). Fix the errors; mention the suggestions.`;
+- When the design is finished: call check_design (with the lock). Fix the errors; mention the suggestions.
+- Remotion videos: the same stages with check_video_options (one composition per option), lock_video and check_video.`;
 
 const FILE = z.string().min(1).max(1_000);
 const SIZE = z.string().regex(/^\d+x\d+$/, "Give size as WxH, like 1200x630.").optional()
   .describe("For HTML files: the page size as WxH, like 1200x630. SVGs use their own size.");
+const ENTRY = z.string().min(1).max(1_000).describe('The Remotion entry file that calls registerRoot, like "src/index.ts".');
+const COMPOSITION = z.string().min(1).max(200).describe("A composition id, as in <Composition id=…>.");
 const NAME = z.string().regex(/^[\w-]{1,60}$/, "Letters, digits, - and _ only.").describe('A short name for the lock, like "invitation".');
 
 const TOOLS = {
@@ -38,8 +42,22 @@ const TOOLS = {
     description: "Call on a finished design (SVG or HTML). Errors to fix: text contrast below WCAG, text cut off or at the edge, colors or fonts outside the lock. Suggestions: the AI defaults (dead-center subject, everything mid-grey, too saturated, raw red, yellow and blue together). Each with its source.",
     inputSchema: z.object({ file: FILE, lock: NAME.optional().describe("The lock to hold it to."), size: SIZE }),
   },
+  check_video_options: {
+    title: "Check the video options",
+    description: `Call with 2–${MAX_OPTIONS} short Remotion compositions, one per option, before making the full video. Renders a storyboard of each (5 key frames) into one numbered contact sheet and says whether they really differ. Never says which is better. The first call bundles the project, which takes a few seconds.`,
+    inputSchema: z.object({ entry: ENTRY, compositions: z.array(COMPOSITION).min(2).max(MAX_OPTIONS) }),
+  },
+  lock_video: {
+    title: "Lock the chosen video",
+    description: "Call when the person picks a video option. Saves its colors, fonts, size and look as a design lock, which check_video holds the finished video to.",
+    inputSchema: z.object({ entry: ENTRY, composition: COMPOSITION, name: NAME }),
+  },
+  check_video: {
+    title: "Check the finished video",
+    description: "Call on a finished Remotion composition. Reads a frame every quarter second. Errors: text shown too briefly to read, text too small or low in contrast, text at the edge, blank stretches, colors or fonts outside the lock. Suggestions: the same frame held over 6 s, too many fonts.",
+    inputSchema: z.object({ entry: ENTRY, composition: COMPOSITION, lock: NAME.optional().describe("The lock to hold it to.") }),
+  },
 } as const;
-
 
 export function runMcpServer(project: string): void {
   const call = async (run: () => Promise<StageResult>) => {
@@ -57,8 +75,11 @@ export function runMcpServer(project: string): void {
     server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call(() => runOptions(project, a.files, parseSize(a.size))));
     server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call(() => runLock(project, a.file, a.name, parseSize(a.size))));
     server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call(() => runCheck(project, a.file, a.lock, parseSize(a.size))));
+    server.registerTool("check_video_options", { ...TOOLS.check_video_options, annotations }, (a) => call(() => runVideoOptions(project, a.entry, a.compositions)));
+    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call(() => runVideoLock(project, a.entry, a.composition, a.name)));
+    server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call(() => runVideoCheck(project, a.entry, a.composition, a.lock)));
     return server;
   }, { onerror: (error) => process.stderr.write(`attentry-design mcp: ${error.message.replace(/\s+/g, " ").slice(0, 300)}\n`) });
-  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void closeBrowser().finally(() => process.exit(0)));
-  process.stdin.on("close", () => void closeBrowser());
+  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void Promise.all([closeBrowser(), closeRemotion()]).finally(() => process.exit(0)));
+  process.stdin.on("close", () => void Promise.all([closeBrowser(), closeRemotion()]));
 }

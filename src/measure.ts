@@ -157,7 +157,7 @@ export function kmeans(pixels: Lab[], k: number): Swatch[] {
       share: assign.filter((a) => a === j).length / pixels.length,
       hex: formatHex({ mode: "oklab", ...lab }),
     }))
-    .filter((s) => s.share >= 0.02)
+    .filter((s) => s.share >= 0.005) // small accents count: an orange ball is a color of the design
     .sort((a, b) => b.share - a.share);
 }
 

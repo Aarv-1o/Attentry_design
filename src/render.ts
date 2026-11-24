@@ -16,7 +16,9 @@ export interface TextBox {
   text: string;
   color: string; // computed CSS color of the glyphs
   fontFamily: string;
-  fontSize: number; // px, as rendered
+  fontSize: number; // px, as the CSS sets it
+  size: number; // px on screen, after any scaling (a camera zoom, a CSS transform)
+  opacity: number; // effective, with every ancestor's opacity multiplied in
   bold: boolean;
   box: Box;
 }
@@ -35,7 +37,7 @@ export interface Rendered {
 // together).
 let launching: Promise<Browser> | undefined;
 
-function getBrowser(): Promise<Browser> {
+export function getBrowser(): Promise<Browser> {
   launching ??= (async () => {
     for (const channel of ["chrome", "msedge"]) {
       try {
@@ -91,7 +93,7 @@ const SVG_SIZE = `(() => {
   return { width: Math.round(w), height: Math.round(h) };
 })()`;
 
-const READ_DESIGN = `(() => {
+export const READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
   const colors = new Set(), fonts = new Set(), texts = [];
@@ -121,9 +123,13 @@ const READ_DESIGN = `(() => {
     colors.add(color);
     const family = style.fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
     fonts.add(family);
+    let opacity = 1;
+    for (let e = el; e; e = e.parentElement) opacity *= parseFloat(getComputedStyle(e).opacity);
+    const scale = !svg && el.offsetHeight ? r.height / el.offsetHeight : 1;
     texts.push({
       text: own, color, fontFamily: family,
-      fontSize: parseFloat(style.fontSize), bold: parseInt(style.fontWeight, 10) >= 600,
+      fontSize: parseFloat(style.fontSize), size: parseFloat(style.fontSize) * scale, opacity,
+      bold: parseInt(style.fontWeight, 10) >= 600,
       box: { x: r.x, y: r.y, width: r.width, height: r.height },
     });
   }

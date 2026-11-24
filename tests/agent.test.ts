@@ -34,6 +34,15 @@ test("the brief walks through the stages; a quick request goes straight to the c
   assert.ok(video?.includes("storyboard"));
 });
 
+test("in a Remotion project, a video brief asks for compositions and the video tools", async () => {
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  await writeFile(join(project, "package.json"), JSON.stringify({ dependencies: { remotion: "4.0.0" } }));
+  const video = (await brief("make a launch video", project))!;
+  for (const word of ["Remotion composition", "check_video_options", "lock_video", "check_video with"]) assert.ok(video.includes(word), word);
+  assert.ok(!video.includes("check_options with the files"));
+  assert.match((await brief("just a quick promo video", project))!, /check_video on|check_video with/);
+});
+
 test("the brief mentions the project's existing locks", async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   await mkdir(join(project, ".attentry-design"));
@@ -50,7 +59,7 @@ test("the hook answers only UserPromptSubmit design requests, as Claude Code exp
   assert.equal(await hookReply({ hook_event_name: "Stop" }), "");
 });
 
-test("MCP: the three tools are listed and check_options answers with a contact sheet", { timeout: 60_000 }, async () => {
+test("MCP: the six tools are listed and check_options answers with a contact sheet", { timeout: 60_000 }, async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   for (const f of ["invite-centered.svg", "invite-centered-again.svg"]) await copyFile(join(import.meta.dirname, "fixtures", f), join(project, f));
   const server = spawn(process.execPath, ["--import", "tsx", join(import.meta.dirname, "..", "src", "cli.ts"), "mcp"], {
@@ -74,7 +83,7 @@ test("MCP: the three tools are listed and check_options answers with a contact s
     await ask("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "0" } });
     server.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
     const tools = (await ask("tools/list", {})).result.tools.map((t: { name: string }) => t.name).sort();
-    assert.deepEqual(tools, ["check_design", "check_options", "lock_design"]);
+    assert.deepEqual(tools, ["check_design", "check_options", "check_video", "check_video_options", "lock_design", "lock_video"]);
 
     const result = (await ask("tools/call", { name: "check_options", arguments: { files: ["invite-centered.svg", "invite-centered-again.svg"] } })).result;
     const text = result.content[0].text as string;

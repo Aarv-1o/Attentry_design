@@ -1,7 +1,7 @@
 // Stage 1: notice that the person asked for a design and tell the agent how to go about it before
 // it draws anything: ask the brief, make real options, lock the pick, check the result. Short, as
 // the agent pays for every word, and silent for everything that isn't a design request.
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { LOCK_DIR } from "./lock.ts";
 import { MAX_OPTIONS } from "./options.ts";
@@ -31,9 +31,37 @@ export async function existingLocks(project: string): Promise<string[]> {
   }
 }
 
+/** Whether the project uses Remotion (it's in its package.json). */
+export async function usesRemotion(project: string): Promise<boolean> {
+  try {
+    const pkg = JSON.parse(await readFile(join(project, "package.json"), "utf8"));
+    return "remotion" in { ...pkg.dependencies, ...pkg.devDependencies };
+  } catch {
+    return false;
+  }
+}
+
+/** What each stage is made of: picture files, or Remotion compositions for a Remotion video. */
+function toolsFor(remotion: boolean) {
+  return remotion
+    ? {
+        options: "make each option a short Remotion composition (a few seconds each, like OptionA, OptionB)",
+        check_options: "check_video_options with the entry file and the compositions",
+        lock: "lock_video with the chosen composition",
+        check: "check_video with the composition",
+      }
+    : {
+        options: "",
+        check_options: "check_options with the files",
+        lock: "lock_design with the chosen file",
+        check: "check_design with the file",
+      };
+}
+
 export async function brief(prompt: string, project: string): Promise<string | undefined> {
   const kind = designKind(prompt);
   if (!kind) return undefined;
+  const tools = toolsFor(kind === "video" && (await usesRemotion(project)));
   const locks = await existingLocks(project);
   const lockLine = locks.length
     ? `This project has design locks: ${locks.join(", ")}. If the request continues one, skip to step 4 and check against it.`
@@ -41,22 +69,22 @@ export async function brief(prompt: string, project: string): Promise<string | u
 
   if (QUICK.test(prompt)) {
     return [
-      `Attentry Design: a quick ${kind} request. Make it, then call check_design on the file and fix what it marks as errors.`,
+      `Attentry Design: a quick ${kind} request. Make it, then call ${tools.check} and fix what it marks as errors.`,
       lockLine,
     ].filter(Boolean).join("\n");
   }
 
-  const options =
-    kind === "video"
+  const options = tools.options ||
+    (kind === "video"
       ? "draw a storyboard per option: one SVG or HTML file with 4–6 key frames side by side"
-      : "draw each option small, as its own SVG or HTML file";
+      : "draw each option small, as its own SVG or HTML file");
   return [
     `Attentry Design: this is ${kind === "illustration" ? "an" : "a"} ${kind} request. Before drawing:`,
     "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: what it's for, who sees it, where it's used and at what size, the exact text, the mood, anything it must have or avoid. If they skip or decline the questions, don't stop: choose sensible answers yourself, state them in one line, and go on to the options, where they choose by looking.",
-    `2. Options. Then ${options}: 2–3 for something small, up to ${MAX_OPTIONS} for a key image. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette. Call check_options with the files, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
-    "3. Lock. Call lock_design with the chosen file and a short name.",
-    "4. Finish. Make it full size, call check_design with the file and the lock, fix the errors, and mention the suggestions without forcing them.",
-    "5. End with a short design card: the file, the lock, and what was found and fixed.",
+    `2. Options. Then ${options}: 2–3 for something small, up to ${MAX_OPTIONS} for a key piece. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette. Call ${tools.check_options}, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
+    `3. Lock. Call ${tools.lock} and a short name.`,
+    `4. Finish. Make it in full, call ${tools.check} and the lock, fix the errors, and mention the suggestions without forcing them.`,
+    "5. End with a short design card: what was made, the lock, and what was found and fixed.",
     "Attentry Design checks quality, not taste: the person's choices win.",
     lockLine,
   ].filter(Boolean).join("\n");

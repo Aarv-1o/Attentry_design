@@ -2,3 +2,4 @@ node_modules/
 # Renders are written to experiments/*/out; the ones committed there are the test's results.
 *.log
 claude-plugin/attentry-design/dist/
+.attentry-design/

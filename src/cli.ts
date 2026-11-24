@@ -5,7 +5,8 @@
 // attentry-design mcp                    the stage tools for the agent
 import { parseArgs } from "node:util";
 import { closeBrowser } from "./render.ts";
-import { parseSize, runCheck, runLock, runOptions, type StageResult } from "./stages.ts";
+import { closeRemotion } from "./remotion.ts";
+import { parseSize, runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
 import { runHook } from "./hook.ts";
 import { runMcpServer } from "./mcp.ts";
 
@@ -13,6 +14,9 @@ const USAGE = `Usage:
   attentry-design options <file> <file> [… up to 5] [--out sheet.png]
   attentry-design lock <file> --name <name>
   attentry-design check <file> [--lock <name>]
+  attentry-design video-options <entry> <composition> <composition> [… up to 5]
+  attentry-design video-lock <entry> <composition> --name <name>
+  attentry-design video-check <entry> <composition> [--lock <name>]
   attentry-design hook | mcp      (for Claude Code)
 Options: --size WxH (for HTML pages; SVGs use their own size), --json`;
 
@@ -53,6 +57,21 @@ async function main(argv: string[]): Promise<number> {
       print(r);
       return r.findings.some((f) => f.kind === "error") ? 2 : 0;
     }
+    case "video-options": {
+      const [entry, ...ids] = files;
+      print(await runVideoOptions(project, entry, ids, values.out));
+      return 0;
+    }
+    case "video-lock":
+      if (files.length !== 2 || !values.name) throw new Error("video-lock takes an entry, a composition and --name.");
+      print(await runVideoLock(project, files[0], files[1], values.name));
+      return 0;
+    case "video-check": {
+      if (files.length !== 2) throw new Error("video-check takes an entry and a composition.");
+      const r = await runVideoCheck(project, files[0], files[1], values.lock);
+      print(r);
+      return r.findings.some((f) => f.kind === "error") ? 2 : 0;
+    }
     default:
       console.error(USAGE);
       return 1;
@@ -72,5 +91,5 @@ if (command === "hook") {
       console.error(e.message);
       process.exitCode = 1;
     })
-    .finally(closeBrowser);
+    .finally(() => Promise.all([closeBrowser(), closeRemotion()]));
 }

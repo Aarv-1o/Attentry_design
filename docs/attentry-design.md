@@ -118,7 +118,17 @@ Written by hand, because no library fits: the diversity report, the subject-posi
    plugin. Tried in a real session: three options that differ, a lock, a finished design checked
    clean. sharp and playwright-core resolve from the repo's node_modules for now; shipping them is
    step 4.
-3. **Video.** Remotion stills for storyboard options, frame checks from the rules doc.
+3. **Video** (built 2026-11-24). Options are short compositions, shown as storyboards (5 key
+   frames each). The finished video is read every quarter second, pixels and on-screen text, by
+   driving the project's own Remotion bundle and server in the browser (Remotion's internals,
+   detected and refused if a version changes them). Checks: lines or cards too brief to read
+   (lines shown together are timed together; a typed line counts from its last letter), text too
+   small or low in contrast, text cut by the frame, blank stretches, the same frame over 6 s, fonts,
+   the lock; text near the edge is one suggestion. Crowded frames (a whole IDE) are texture: only
+   caption-sized text in them counts. On Attentry's own two videos it agrees with the 2026-11-19
+   hand review on reading time (the hook: 34 characters in 0.75 s, needs 2 s), contrast and fonts.
+   Not yet: text changing during a camera move (T3), sizes too close (R4), the call to action at the
+   end (S1).
 4. **Packaging.** The VS Code extension and the stores, the site page, then Codex. Decide here how
    it takes Attentry's plumbing (hooks install, background process, Check setup): a package
    Attentry publishes, a copy, or a split-out core.

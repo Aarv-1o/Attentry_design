@@ -17,5 +17,9 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    errors. Mention the suggestions; don't force them.
 5. **Card.** End with a short design card: the file, the lock, and what was found and fixed.
 
+**Remotion videos** use the same stages with the video tools: each option is a short composition
+(`check_video_options` with the entry file and the composition ids), then `lock_video`, then
+`check_video` on the finished composition. The first call bundles the project (a few seconds).
+
 Attentry Design checks quality, not taste: the person's choices win. If they want it quick, skip
 to step 4.

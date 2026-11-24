@@ -7,10 +7,10 @@ and the result has no errors. On your own machine, without another AI model, and
 taste. It starts with SVG/HTML illustration, [Remotion](https://www.remotion.dev) videos and
 Claude Code.
 
-**Status: building, step 2 of 4 done.** The plan is agreed (five stages: brief, options, lock,
+**Status: building, step 3 of 4 done.** The plan is agreed (five stages: brief, options, lock,
 finish, card; illustration and video first). The engine that renders designs, checks whether
 options really differ, keeps the chosen one as a lock and checks the result works as a command
-and as a Claude Code plugin; video comes next.
+and as a Claude Code plugin, for SVG/HTML illustrations and Remotion videos; packaging comes next.
 
 ## Two halves
 
@@ -57,7 +57,13 @@ node --import tsx src/cli.ts lock b.svg --name invitation                   # ke
 node --import tsx src/cli.ts check final.svg --lock invitation              # errors and suggestions
 ```
 
-HTML designs take `--size 1200x630`.
+HTML designs take `--size 1200x630`. Remotion videos (run inside the Remotion project):
+
+```
+node --import tsx path/to/src/cli.ts video-options src/index.ts OptionA OptionB   # storyboards compared
+node --import tsx path/to/src/cli.ts video-lock src/index.ts OptionB --name promo
+node --import tsx path/to/src/cli.ts video-check src/index.ts Promo --lock promo
+```
 
 To try it inside Claude Code for one session (nothing is installed into your Claude setup):
 

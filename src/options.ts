@@ -77,17 +77,22 @@ function list(options: Option[]): string {
   return options.map((o) => o.number).join(", ");
 }
 
-/** One PNG with the options side by side, numbered, each with its main colors underneath. */
+/**
+ * One PNG with the options numbered, each with its main colors underneath: side by side for
+ * pictures, one under another for storyboards (which are wide).
+ */
 export async function contactSheet(rendered: Rendered[], options: Option[], out: string): Promise<string> {
-  const W = 320, GAP = 24, LABEL = 56;
+  const rows = rendered[0].width / rendered[0].height > 2;
+  const W = rows ? 960 : 320, GAP = 24, LABEL = 56;
   const tiles = await Promise.all(rendered.map((r) => sharp(r.png).resize({ width: W }).png().toBuffer({ resolveWithObject: true })));
   const tileH = Math.max(...tiles.map((t) => t.info.height));
-  const width = GAP + tiles.length * (W + GAP);
-  const height = GAP + tileH + LABEL + GAP;
+  const step = rows ? { x: 0, y: tileH + LABEL + GAP } : { x: W + GAP, y: 0 };
+  const width = rows ? GAP + W + GAP : GAP + tiles.length * (W + GAP);
+  const height = rows ? GAP + tiles.length * (tileH + LABEL + GAP) : GAP + tileH + LABEL + GAP;
   const parts: OverlayOptions[] = [];
   tiles.forEach((t, i) => {
-    const x = GAP + i * (W + GAP);
-    parts.push({ input: t.data, left: x, top: GAP });
+    const x = GAP + i * step.x, y = GAP + i * step.y;
+    parts.push({ input: t.data, left: x, top: y });
     const swatches = options[i].measures.palette
       .map((s, k) => `<rect x="${28 + k * 22}" y="16" width="18" height="18" fill="${s.hex}" stroke="#0002"/>`)
       .join("");
@@ -96,7 +101,7 @@ export async function contactSheet(rendered: Rendered[], options: Option[], out:
       ${swatches}
       <text x="0" y="50" font-family="Arial, sans-serif" font-size="12" fill="#555">${escape(basename(options[i].file))}</text>
     </svg>`;
-    parts.push({ input: Buffer.from(label), left: x, top: GAP + tileH + 4 });
+    parts.push({ input: Buffer.from(label), left: x, top: y + tileH + 4 });
   });
   await sharp({ create: { width, height, channels: 3, background: "#f4f4f2" } }).composite(parts).png().toFile(out);
   return out;
