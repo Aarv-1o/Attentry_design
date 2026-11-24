@@ -1,100 +1,138 @@
-# Attentry Design: plan (draft, not agreed)
+# Attentry Design: plan
 
-Not agreed and not started: research comes first (docs/attentry-design-research.md). Nothing is
-built until the person says so.
+Rewritten 2026-11-24 around the five design stages (the first draft is in
+archive/attentry-design-plan-2026-11-15.md). Agreed with the person: video and illustration
+first; everything shown in the chat; up to 5 options; quality, never taste.
 
-A second extension, built from Attentry's working model: it checks what an AI agent makes, at the
-moments the agent can still fix it, on the person's machine and without AI. Attentry checks code;
-Attentry Design checks video. This is a plan to agree before any code is written.
+## What it is
 
-Decided (2026-11-15):
-- **Video first:** Remotion projects. Web UI may come later.
-- **Its own repo** (2026-11-24): code and design live in Aarv-1o/Attentry_design, not in the
-  Attentry repo. Each extension is published on its own. How it takes Attentry's plumbing is
-  open (see "The shared core" and the open questions).
-- **Claude Code first.** Codex later. The shared plumbing already supports it.
+A companion to Attentry for design work. When someone asks their coding agent to design or
+create something (an invitation illustration, a poster, a scene, a launch video), Attentry Design
+steps in at the moments where design goes wrong: before anything is drawn, when options are
+chosen, and when the work is finished. It runs on the person's machine, with no AI and no tokens.
 
-## The problem
+It improves quality and never judges taste. Everyone has their own taste; Attentry Design makes
+sure the brief was asked, the options really differ, the choice is kept, and the result has no
+errors. It draws nothing itself: the agent draws, Attentry Design structures the process and
+measures the result.
 
-AI agents now write Remotion videos that render. What they lack is direction: a weak first second,
-text gone before anyone can read it, five colors fighting, a shot that sits still too long, no end
-card. These are the rules an editor or motion designer applies by eye. Many can be measured from the
-source and from rendered frames, so they can be checked without AI, the same way Attentry checks
-code. It checks the rules, not taste: the store copy says so.
+Own logo, own page on the Attentry site. Name to be decided.
 
-## The same moments as Attentry
+## Why it steps in earlier than Attentry
 
-| Moment | What the agent hears |
-|---|---|
-| With the request | The project's palette, fonts and scene components, to reuse |
-| Before an edit | A color outside the palette; a scene that copies an existing component |
-| After an edit | Problems found in the source: text timing, contrast of known colors, sizes, easing |
-| Check-in | Problems found in rendered frames: contrast on the real background, safe area, the hook, still shots |
-| End of task | A design card: a strip of frames, problems added and fixed |
-| Tools | `find_existing` (palette, components), `check`, `explain`, `check_storyboard` (a plan, before animating) |
+Attentry waits for code and finds problems in it. With a picture, most of the damage is done
+before anything is drawn: the agent guesses the occasion, mood, size and text, falls back on its
+defaults (centered, symmetric, pastel, the first idea) and often never looks at what it made
+(attentry-design-illustration.md; Loomis p. 179 on the first idea). So the useful moments are
+the brief, the options and the finished render, not every edit.
 
-Rendering is slow (seconds per frame, longer for the first one), so it only happens at check-ins
-and in `check`, never after every edit. The checks after each edit read the source only.
+## The five stages
 
-## First rules (each with fixtures it must flag and must not flag, AGENTS.md rule 10)
+| Stage | When | What happens | How (Claude Code) |
+|---|---|---|---|
+| **1. Brief** | The person asks for a design | Attentry Design recognizes a design request and gives the agent the questions to ask (occasion, audience, size, exact text, mood, must-haves) and the project's palette and fonts if any. The agent asks the person before drawing. | `UserPromptSubmit` hook adds the brief; the agent asks with its question tool |
+| **2. Options** | Before the full drawing | The agent makes up to 5 small options (thumbnails for an illustration, 4–6 key frames each for a video), the count set by the request. Attentry Design renders them into one contact sheet and checks they really differ. | MCP tool `check_options` |
+| **3. Lock** | The person picks one | The choice is saved as a design lock: palette, composition type, value plan, light direction, fonts, text, size. | MCP tool `lock_design`, file `.attentry-design/<name>.lock.json` |
+| **4. Finish** | The agent draws it full size | Attentry Design renders it, checks errors (to fix) and defaults (suggestions), and compares it with the lock. | MCP tool `check_design` |
+| **5. Card** | End of the task | A design card in the chat: the image or frame strip, the lock, what was found and fixed, each finding with its source. | Rendered PNG plus markdown |
 
-Thresholds come from published guides, so each finding can say where its number comes from.
+Quick requests ("just a quick one") skip to stage 4 with the error checks only.
 
-1. **Text gone too soon.** On-screen text needs at least 1 second per 17 characters, and never less
-   than 5/6 of a second (Netflix's subtitle guides: 17 characters per second for adults in most
-   languages). From the source: the text and how long it's shown.
-2. **Too much text at once.** More than about 42 characters per line or 2 lines (subtitle guides),
-   or more than one sentence while something else moves.
-3. **Text contrast.** Under 4.5:1 for normal text and 3:1 for large text (WCAG), measured on the
-   rendered frame against what's really behind the text.
-4. **Text too small for a phone.** Below a minimum size relative to the frame width.
-5. **Outside the safe area.** Text in the edge margin, or under a platform's buttons for a vertical
-   video.
-6. **Off-palette colors.** A color that isn't in the project's theme. More than one accent color in
-   a scene.
-7. **No hook.** Nothing appears or moves in the first second; the main claim lands after 3 seconds.
-8. **A still shot.** No visible change for longer than a set time (compare rendered frames).
-9. **Abrupt motion.** Position or scale animated with no easing: it starts and stops with a jolt.
-10. **No end card.** The last seconds have no call to action or link.
+**In the chat, not a panel.** Everything the person sees comes through the agent's replies, so
+the information stays in one place. Images can't be drawn in a terminal, so the contact sheet and
+the card are PNG files the agent links; the person picks an option by number in the question
+tool.
 
-Later: sound at cuts (ffprobe), beat timing, storyboard checks, more rules from use.
+**Never:** judge taste, draw, use AI, step in while the agent is sketching.
 
-## Tech stack (to install only once this plan is agreed)
+## Stage 2: what "really different" means
 
-- **Reading the source:** tree-sitter TypeScript and TSX, already in Attentry.
-- **Rendering frames:** the person's own Remotion install (`@remotion/renderer` from their
-  project), not a bundled copy. Remotion's free license covers individuals and teams of up to 3;
-  bigger companies need a Remotion Company License. Attentry Design uses the project's Remotion
-  rather than shipping it, and says so.
-- **Pixels:** a small image library (to choose: `sharp` or `pngjs`) to read rendered frames.
-- **Contrast and color:** `colorjs.io` or `culori` (WCAG contrast, color distance for "is this in
-  the palette").
-- **Later:** ffprobe for sound.
+The options should differ on the axes the books name, not in small details:
 
-## The shared core
+- **Composition type** (Payne's fifteen, e.g. steelyard, S-curve, diagonal, group mass). Measured
+  as the subject's position and the mass layout.
+- **Value plan** (Loomis's four: which value is the field). Measured from the luminance
+  histogram.
+- **Palette.** Measured as the main colors in OKLab and the distance between option palettes.
+- **Light direction** where there is light: from the source for code-drawn art.
 
-The plumbing both extensions need, moved so each takes it instead of copying it: agent hooks and
-replies, the Claude Code plugin install and refresh, the heard check, the MCP server, the language
-server, the background process, Check setup, settings and project picking. Attentry keeps what is
-about code: languages, rules, reuse, tests, the change card's contents, Codex patches.
+Findings: options nearly identical as thumbnails; all subjects centered; all on the same value
+plan; palettes within a small distance of each other. The report says which to redo and along
+which axis. Attentry Design suggests axes; it never says which option is better.
 
-The move must not change Attentry: the 232 tests pass before and after, with no behavior change.
+## Stage 4: the first checks
 
-## Order
+Each with fixtures it must flag and must not flag. Errors are told to the agent to fix; defaults
+are suggestions, a few at most per check.
 
-1. **Proof first, no plumbing.** A command, `attentry-design check <remotion project>`, that runs
-   the first rules and prints findings. Tried on Attentry's marketing videos and two or three public Remotion
-   projects. Decide from the findings whether they're useful enough to build on.
-2. **Shared core.** Move the plumbing, Attentry unchanged, tests green.
-3. **The extension.** Claude Code hooks, MCP tools, the panel, the design card.
-4. **Release** to both stores, then Codex.
+**Illustration**
+
+| Check | Kind | Read from |
+|---|---|---|
+| Text contrast under WCAG 4.5:1 (3:1 large) on what's really behind it | error | render |
+| Text outside the safe margin or cut by the edge | error | source + render |
+| Shadow lighter than the lit side (Loomis p. 22) | error | source (code-drawn) |
+| Highlights and shadows in different directions on different elements | error | source (code-drawn) |
+| Off the lock: colors outside the locked palette, fonts not locked | error | source |
+| Subject dead center (Bang, Payne, Loomis, Goree) | default | render |
+| Even spacing of elements (Payne, Loomis, Gurney) | default | source + render |
+| Values scattered, or bunched mid-grey (Loomis, Gurney) | default | render |
+| Saturation high over most of the frame; all three primaries raw (Loomis) | default | render |
+| Too smooth: flat fills only, no texture (Goree, Loomis, Gurney) | default | source + render |
+
+**Video** (from attentry-design-rules.md, measured on rendered frames and the source): text shown
+too briefly, too small, low contrast, outside the safe area; a still shot; text changing during a
+camera move; no hook in the first second; no end card. Storyboard options in stage 2 use the same
+diversity measures per key frame.
+
+Later: generated images (pixels only: lettering through OCR, hot skin, two eye levels), more
+direction cards, copy.
+
+## Tech stack (agreed 2026-11-24)
+
+Same base as Attentry: Node 22, TypeScript run with tsx, `node:test`, esbuild for the bundle,
+`@modelcontextprotocol/server` and zod for the MCP tools.
+
+New packages:
+
+- **`playwright-core`**: renders SVG and HTML designs in the person's installed Chrome or Edge
+  (nothing downloaded) and reads every element's computed colors, fonts and text boxes. One
+  renderer for both, so an SVG never looks different between options and checks. (`resvg-js` was
+  agreed first and dropped for this reason.)
+- **`sharp`**: resizes renders, gives raw pixels, composes the contact sheet and the card.
+- **`culori`**: OKLab, WCAG contrast and luminance, color distance, parsing CSS colors.
+- **Remotion stills** through the person's own `@remotion/renderer` (not bundled; Remotion's
+  license is theirs). For step 3.
+- **Later:** `tesseract.js` for lettering in generated images.
+
+Written by hand, because no library fits: the diversity report, the subject-position estimate
+(contrast-weighted center of mass), a 20-line k-means for the palette, and the checks.
+
+## Build order
+
+1. **The engine, as a command** (built 2026-11-24, `src/`, 10 tests). `attentry-design options <files>` (render, contact sheet,
+   diversity report), `attentry-design lock`, `attentry-design check <file>`, for SVG
+   illustrations. Fixtures for every check. Tried on illustrations made the plain way and the
+   staged way, like the direction test of 2026-11-19.
+2. **Claude Code.** The brief hook and the three MCP tools, as a plugin, standalone at first.
+3. **Video.** Remotion stills for storyboard options, frame checks from the rules doc.
+4. **Packaging.** The VS Code extension and the stores, the site page, then Codex. Decide here how
+   it takes Attentry's plumbing (hooks install, background process, Check setup): a package
+   Attentry publishes, a copy, or a split-out core.
+
+## Others doing parts of this (2026-11-24)
+
+- **huashu-design** (Claude Code skill): offers three directions from 20 design philosophies
+  when a request is vague, then builds. **Superdesign**: several UI variations in parallel.
+  **Interface Design**: saves design decisions to a system file. **Google Stitch**: variants of a
+  screen along chosen axes, a design.md. **Recraft**: saved brand styles for illustration sets.
+  Remotion guides recommend approving a storyboard before building, by prompt only.
+- What none of them do: check that options really differ, hold the result to the lock, and render
+  and check the result without AI. Nearly all target web UI, not illustration or video.
 
 ## Open questions
 
-- Name in the stores: "Attentry Design" with the same logo, or a variant of the mark?
-- Remotion only, or also Motion Canvas / Revideo later?
-- Vertical video (Shorts, Reels) safe areas from day one, or 16:9 first?
-- With its own repo, how does it get Attentry's plumbing (hooks, MCP server, background process,
-  Check setup)? Options: Attentry publishes that part as a package both use; or the plumbing is
-  copied here and the two drift apart; or a shared core is split out of Attentry into its own
-  package. The first keeps one copy without moving Attentry's code into this repo.
+- Name in the stores and on the site.
+- How it takes Attentry's plumbing (step 4).
+- HTML/CSS illustrations need a browser to render: in step 1, or after?
+- Vertical video safe areas from day one, or 16:9 first?

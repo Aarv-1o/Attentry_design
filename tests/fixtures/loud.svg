@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <rect width="200" height="400" fill="#ff1a1a"/>
+  <rect x="200" width="200" height="400" fill="#ffe600"/>
+  <rect x="400" width="200" height="400" fill="#1a3cff"/>
+  <text x="4" y="30" font-family="Arial" font-size="18" fill="#ffffff">Big sale today</text>
+</svg>

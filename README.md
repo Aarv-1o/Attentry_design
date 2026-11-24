@@ -1,12 +1,16 @@
 # Attentry Design
 
 [Attentry](https://github.com/Aarv-1o/Attentry) checks the code AI agents write. Attentry Design
-will do the same for the videos they make: check them at the moments the agent can still fix
-them, on your own machine, without another AI model. It starts with
-[Remotion](https://www.remotion.dev) videos and Claude Code.
+does the same for the illustrations and videos they make: it steps in when you ask your agent to
+design something, makes sure the brief is asked, the options really differ, your choice is kept
+and the result has no errors. On your own machine, without another AI model, and it never judges
+taste. It starts with SVG/HTML illustration, [Remotion](https://www.remotion.dev) videos and
+Claude Code.
 
-**Status: research.** Nothing is built yet. This repo holds the research, the plan and the first
-experiment. The plan and the first rules are drafts that haven't been agreed yet.
+**Status: building, step 1 of 4.** The plan is agreed (five stages: brief, options, lock,
+finish, card; illustration and video first). The engine that renders designs, checks whether
+options really differ, keeps the chosen one as a lock and checks the result works as a command;
+the Claude Code plugin comes next.
 
 ## Two halves
 
@@ -25,7 +29,9 @@ lacked, and only looking at the frames caught how badly some of it was first dra
 
 | Path | What it is |
 |---|---|
-| [docs/attentry-design.md](docs/attentry-design.md) | The plan (draft): the moments, the first rules, the stack, the order |
+| [src](src) | The engine (step 1): render a design, compare options, lock one, check the result |
+| [tests](tests) | Tests and fixture designs each check must flag or pass |
+| [docs/attentry-design.md](docs/attentry-design.md) | The plan: the five design stages, the first checks, the stack, the order |
 | [docs/attentry-design-research.md](docs/attentry-design-research.md) | Why: what goes wrong in AI-made video, what existing tools miss |
 | [docs/attentry-design-baseline.md](docs/attentry-design-baseline.md) | 25 gallery videos, 16 AI-made and 15 professional launch videos, measured the same way |
 | [docs/attentry-design-rules.md](docs/attentry-design-rules.md) | The first rules (draft), applied by hand to real videos |
@@ -37,6 +43,20 @@ lacked, and only looking at the frames caught how badly some of it was first dra
 | [docs/attentry-design-book-notes.md](docs/attentry-design-book-notes.md) | Notes from 40 books on editing, animation, type, color, light, physics, staging, writing, persuasion and illustration, with page references |
 | [experiments/direction](experiments/direction) | The test: a dragon over a lake, a campsite at night and a plane taking off, each made plain and with the cards. Renders in `out/` (`*-compare.mp4`: plain left, directed right) |
 | [tools](tools) | The scripts used to read scanned books: OCR to text with page markers, and finding a quote's printed page |
+
+## Trying the engine
+
+Needs Node 22 and Chrome or Edge installed.
+
+```
+npm install
+npm test
+node --import tsx src/cli.ts options a.svg b.svg c.svg --out options.png   # do the options really differ?
+node --import tsx src/cli.ts lock b.svg --name invitation                   # keep the one picked
+node --import tsx src/cli.ts check final.svg --lock invitation              # errors and suggestions
+```
+
+HTML designs take `--size 1200x630`.
 
 ## Running the experiment
 

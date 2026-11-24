@@ -4,18 +4,29 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "attentry-design": "node --import tsx src/cli.ts",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "studio": "remotion studio experiments/direction/index.ts",
     "render": "remotion render experiments/direction/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@remotion/cli": "4.0.539",
+    "culori": "4.0.2",
+    "playwright-core": "1.65.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "remotion": "4.0.539"
+    "remotion": "4.0.539",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@types/culori": "4.0.1",
+    "@types/node": "22.20.5",
     "@types/react": "19.2.2",
+    "tsx": "4.23.15",
     "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <rect width="600" height="800" fill="#f6e9ef"/>
+  <circle cx="300" cy="400" r="190" fill="none" stroke="#e7b8c8" stroke-width="28"/>
+  <circle cx="300" cy="400" r="150" fill="#fbf3f6"/>
+  <text x="300" y="390" text-anchor="middle" font-family="Georgia" font-size="40" fill="#d9a6b8">Maya &amp; Leo</text>
+  <text x="300" y="440" text-anchor="middle" font-family="Georgia" font-size="20" fill="#d9a6b8">June 14</text>
+</svg>
