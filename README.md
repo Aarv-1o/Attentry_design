@@ -31,6 +31,8 @@ lacked, and only looking at the frames caught how badly some of it was first dra
 | [docs/attentry-design-rules.md](docs/attentry-design-rules.md) | The first rules (draft), applied by hand to real videos |
 | [docs/attentry-design-direction.md](docs/attentry-design-direction.md) | The direction idea and the plain-vs-directed test |
 | [docs/attentry-design-cards.md](docs/attentry-design-cards.md) | The direction cards (second draft), with sources |
+| [docs/attentry-design-copy.md](docs/attentry-design-copy.md) | Copy that reads like AI: the patterns, the research, rule ideas, direction |
+| [docs/attentry-design-illustration.md](docs/attentry-design-illustration.md) | Illustration that looks like AI: the look, why it happens, rule ideas, direction |
 | [docs/attentry-design-books.md](docs/attentry-design-books.md) | The reading list |
 | [docs/attentry-design-book-notes.md](docs/attentry-design-book-notes.md) | Notes from 24 books on editing, animation, type, color, light, physics and staging, with page references |
 | [experiments/direction](experiments/direction) | The test: a dragon over a lake, a campsite at night and a plane taking off, each made plain and with the cards. Renders in `out/` (`*-compare.mp4`: plain left, directed right) |

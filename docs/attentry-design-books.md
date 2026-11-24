@@ -77,6 +77,40 @@ directors and effects animators show it. ★ = get first.
 | Blain Brown, *Motion Picture and Video Lighting* | Practical film lighting: key, fill, practical lights, night scenes |
 | *The Art of Pixar: The Complete Color Scripts* | Color scripts: how light and color carry a story beat by beat |
 
+## Copy that reads like AI (added 2026-11-24)
+
+For attentry-design-copy.md: the habits the research found (puffery, participle tails,
+nominalizations, triads, uniform rhythm, no specifics) are exactly what good writing books teach
+against. ★ = get first.
+
+| Book | What it gives |
+|---|---|
+| ★ Joseph M. Williams, *Style: Lessons in Clarity and Grace* | Nominalizations and actions as verbs: the exact grammar Reinhart et al. found LLMs overuse; turnable into rules |
+| ★ Verlyn Klinkenborg, *Several Short Sentences About Writing* | Sentence-by-sentence craft and rhythm: the cure for uniform, frictionless sentences |
+| ★ Chip & Dan Heath, *Made to Stick* | Concrete, specific, story-led messages: why "no specifics" kills copy |
+| ★ Ann Handley, *Everybody Writes* | Marketing writing: voice, empathy for the reader, editing checklists |
+| ★ David Ogilvy, *Ogilvy on Advertising* | Headlines and body copy from research: facts sell, puffery doesn't |
+| Steven Pinker, *The Sense of Style* | Classic style, the curse of knowledge, why clichés and metadiscourse read as empty |
+| William Zinsser, *On Writing Well* | Clutter, simplicity, plain verbs; the standard on cutting |
+| Luke Sullivan, *Hey Whipple, Squeeze This* | Advertising craft: avoiding category language, finding the one true thing |
+| Roy Peter Clark, *Writing Tools* | 50 concrete techniques (sentence length, specific detail, parallelism used on purpose) |
+
+## Illustration that looks like AI (added 2026-11-24)
+
+For attentry-design-illustration.md. The direction books (Gurney, Yot, Mateu-Mestre) already
+cover light and staging; these add picture design, shape and the illustrator's choices.
+
+| Book | What it gives |
+|---|---|
+| ★ Molly Bang, *Picture This: How Pictures Work* | How shape, position, size and color make a picture feel; simple rules a check can use (centered and flat vs. diagonal and tense) |
+| ★ James Gurney, *Imaginative Realism* | Designing scenes that don't exist so they read as real: the case AI art fails most |
+| ★ Andrew Loomis, *Creative Illustration* | Classic illustration composition, value patterns, telling a story in one image |
+| ★ Edgar Payne, *Composition of Outdoor Painting* | Composition patterns beyond the rule of thirds: the alternatives to AI's default layout |
+| Alan Male, *Illustration: A Theoretical and Contextual Perspective* | What illustration is for (inform, persuade, narrate): judging an image by its job |
+| Christian Leborg, *Visual Grammar* | The basic visual elements and relations, compact: vocabulary for rules |
+| Walt Stanchfield, *Drawn to Life* | Gesture and intent in drawing: why stiff, posed figures read as fake |
+| Hans Bacher, *Dream Worlds* (already listed) | Production design and visual development for animation |
+
 ## Free standards and papers (read online)
 
 - Netflix Timed Text Style Guide (reading speed, line length, duration)
