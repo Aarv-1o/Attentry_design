@@ -25,7 +25,7 @@ test("design requests are recognized; code requests that mention visual words ar
 test("the brief walks through the stages; a quick request goes straight to the check", async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   const full = await brief("make an invitation illustration", project);
-  for (const word of ["Brief", "check_options", "lock_design", "check_design", "not taste", "stick figure, flat 2D, 3D, pixel art", "differ in style", "single message", "measure each line", "24 grid squares", "may not get its message across"]) assert.ok(full?.includes(word), word);
+  for (const word of ["Brief", "check_options", "lock_design", "check_design", "not taste", "hand-drawn, flat vector, isometric, 3D look, pixel art", "differ in style", "single message", "measure each line", "a sequence as a timeline", "smallest part that must read", "may not get its message across"]) assert.ok(full?.includes(word), word);
   assert.match(full!, /decline the questions, don't stop/);
   const quick = await brief("just a quick poster for tonight", project);
   assert.ok(quick?.includes("check_design"));
@@ -41,6 +41,13 @@ test("in a Remotion project, a video brief asks for compositions and the video t
   for (const word of ["Remotion composition", "check_video_options", "lock_video", "check_video with"]) assert.ok(video.includes(word), word);
   assert.ok(!video.includes("check_options with the files"));
   assert.match((await brief("just a quick promo video", project))!, /check_video on|check_video with/);
+});
+
+test("style notes come only for the style the request names", async () => {
+  const { styleNotes } = await import("../src/brief.ts");
+  assert.match(styleNotes("a pixel art poster"), /mixels/);
+  assert.match(styleNotes("an isometric illustration"), /2:1/);
+  assert.equal(styleNotes("a poster for the launch"), "");
 });
 
 test("the brief mentions the project's existing locks", async () => {

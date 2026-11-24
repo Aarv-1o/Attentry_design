@@ -43,7 +43,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     });
   }
 
-  if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...(await pixelEdges(rendered, lock)));
+  if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...(await pixelEdges(rendered, lock)), ...(await mixels(rendered, lock)));
 
   findings.push(...hierarchy(texts));
 
@@ -247,6 +247,51 @@ async function legibility(r: Rendered): Promise<Finding[]> {
     rule: "hard-to-read",
     kind: "default",
     message: `A text reader misread ${misread.join(", ")}. The letter shapes may be ambiguous to people too: try a plainer font, more space between letters, or a bigger size.`,
+  }];
+}
+
+/**
+ * Mixels (Pixel Logic p. 21: "NEVER EVER mix different aspect ratios"): parts of a pixel-art
+ * picture drawn at different pixel sizes, like a sprite doubled to 2x beside 1x lettering. In a
+ * region drawn at size n, every run of one color, across or down, is a multiple of n; so each
+ * region's cell size is the greatest common divisor of its runs.
+ */
+export async function mixels(p: Picture, lock: DesignLock): Promise<Finding[]> {
+  if (!/pixel/i.test(lock.style ?? "")) return [];
+  const { data, info } = await sharp(p.png).flatten({ background: "#ffffff" }).raw().toBuffer({ resolveWithObject: true });
+  const W = info.width, H = info.height, T = 48;
+  const at = (x: number, y: number) => { const i = (y * W + x) * 3; return (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]; };
+  const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+  const sizes = new Map<number, number>(); // cell size -> regions
+  for (let ty = 0; ty + T <= H; ty += T) {
+    for (let tx = 0; tx + T <= W; tx += T) {
+      let g = 0, runs = 0;
+      // Runs fully inside the region, across and down (runs cut by its border say nothing).
+      for (let k = 0; k < T; k++) {
+        for (const across of [true, false]) {
+          let start = 0;
+          for (let i = 1; i <= T; i++) {
+            const same = i < T && (across ? at(tx + i, ty + k) === at(tx + i - 1, ty + k) : at(tx + k, ty + i) === at(tx + k, ty + i - 1));
+            if (same) continue;
+            if (start > 0 && i < T) { g = gcd(g, i - start); runs++; }
+            start = i;
+          }
+        }
+      }
+      // Only detailed regions say what grid they're on: a region of a few big blocks gets a large
+      // divisor by coincidence.
+      if (runs >= 40 && g > 0) sizes.set(g, (sizes.get(g) ?? 0) + 1);
+    }
+  }
+  const counted = [...sizes].filter(([, n]) => n >= 3).map(([s]) => s).sort((a, b) => a - b);
+  // A doubled sprite is a whole multiple of the grid next to it (2x, 3x): that's a mixel.
+  const scaled = counted.filter((s) => s !== counted[0] && s % counted[0] === 0);
+  if (!counted.length || !scaled.length) return [];
+  return [{
+    rule: "mixels",
+    kind: "error",
+    message: `This pixel art mixes pixel sizes: parts are drawn with ${[counted[0], ...scaled].map((s) => `${s} px`).join(" and ")} pixels. Draw everything on one pixel grid; to make a sprite bigger, redraw it at the larger size instead of doubling its pixels.`,
+    source: "Azzi, Pixel Logic p. 21 (mixels)",
   }];
 }
 

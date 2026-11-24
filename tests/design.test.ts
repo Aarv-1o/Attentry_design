@@ -153,6 +153,14 @@ test("drawn lettering a reader misreads is a suggestion; lettering it reads is l
   assert.ok(similarity("BACK UP CODE", "EBACE UF CODE") < 0.85);
 });
 
+test("mixels: doubled sprites beside 1x lettering are caught; one grid passes", async () => {
+  const { mixels } = await import("../src/check.ts");
+  const lock = { name: "p", style: "pixel art" } as Parameters<typeof mixels>[1];
+  assert.equal((await mixels(await load("github-pixel-cards.svg"), lock)).length, 1);
+  assert.deepEqual(await mixels(await load("pixel-crisp.svg"), lock), []);
+  assert.deepEqual(await mixels(await load("github-pixel-cards.svg"), { ...lock, style: "flat 2D" }), []);
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });
