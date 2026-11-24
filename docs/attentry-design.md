@@ -111,7 +111,8 @@ New packages:
 - **`culori`**: OKLab, WCAG contrast and luminance, color distance, parsing CSS colors.
 - **Remotion stills** through the person's own `@remotion/renderer` (not bundled; Remotion's
   license is theirs). For step 3.
-- **Later:** `tesseract.js` for lettering in generated images.
+- **`tesseract.js`** with **`@tesseract.js-data/eng`** (added 2026-11-24): OCR for lettering the
+  browser can't see as text, with its English data installed, so nothing downloads.
 
 Written by hand, because no library fits: the diversity report, the subject-position estimate
 (contrast-weighted center of mass), a 20-line k-means for the palette, and the checks.
