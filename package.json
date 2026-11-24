@@ -1,6 +1,7 @@
 {
   "name": "attentry-design",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "studio": "remotion studio experiments/direction/index.ts",
