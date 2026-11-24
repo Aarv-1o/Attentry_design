@@ -33,6 +33,10 @@ test("a typed line is timed from its last letter; a title and subtitle are timed
   assert.match(brief[0].message, /"Checks every edit" and 1 more line shown with it: 63 characters/);
 });
 
+test("video: a ring that cuts through a label is visual tension", { timeout: 120_000 }, async () => {
+  assert.ok((await rules("RingPromo")).includes("visual-tension"));
+});
+
 test("video options: storyboards that differ pass; an unknown composition is named", { timeout: 120_000 }, async () => {
   const at = await mkdtemp(join(tmpdir(), "ad-"));
   const r = await runVideoOptions(at, join(project, entry), ["BadPromo", "GoodPromo"]);

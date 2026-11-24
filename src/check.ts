@@ -301,12 +301,22 @@ export async function mixels(p: Picture, lock: DesignLock): Promise<Finding[]> {
  * green square. It unintentionally draws the eye to that area." Clearly inside or clearly over the
  * edge is fine; a hair away, or a hair over, is not.
  */
-export function tension(r: Rendered, texts: TextBox[]): Finding[] {
+export function tension(r: Pick<Rendered, "panels" | "rings">, texts: TextBox[]): Finding[] {
   const tight: string[] = [];
   for (const t of texts.filter((t) => t.source !== "ocr")) {
+    // A circle's or ellipse's curve running through the text: some points of the text's box fall
+    // inside the curve and some outside (a ring drawn around an icon that cuts its label).
+    const crossed = r.rings.some((g) => {
+      const cx = g.x + g.width / 2, cy = g.y + g.height / 2, rx = g.width / 2, ry = g.height / 2;
+      const pts = [0, 0.5, 1].flatMap((u) => [0, 0.5, 1].map((v) => [t.box.x + u * t.box.width, t.box.y + v * t.box.height]));
+      const d = pts.map(([x, y]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2);
+      return Math.min(...d) < 1 && Math.max(...d) > 1;
+    });
+    if (crossed) { tight.push(what(t)); continue; }
     const cx = t.box.x + t.box.width / 2, cy = t.box.y + t.box.height / 2;
-    // The smallest panel around the text's middle that is bigger than the text itself.
-    const holder = r.panels
+    // HTML text knows its holder from the DOM; SVG text, beside its shapes rather than inside
+    // them, takes the smallest painted shape around its middle that is bigger than itself.
+    const holder = t.holder ?? r.panels
       .filter((p) => cx > p.x && cx < p.x + p.width && cy > p.y && cy < p.y + p.height && p.width * p.height > 1.5 * t.box.width * t.box.height)
       .sort((a, b) => a.width * a.height - b.width * b.height)[0];
     if (!holder) continue;

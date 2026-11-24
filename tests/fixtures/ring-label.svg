@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#f7f1e3"/>
+  <circle cx="200" cy="170" r="40" fill="none" stroke="#1f2430" stroke-width="5"/>
+  <ellipse cx="200" cy="190" rx="90" ry="96" fill="none" stroke="#139c80" stroke-width="6"/>
+  <text x="200" y="285" text-anchor="middle" font-family="Arial" font-size="30" fill="#1f2430">Before an edit</text>
+  <circle cx="600" cy="150" r="40" fill="none" stroke="#1f2430" stroke-width="5"/>
+  <ellipse cx="600" cy="150" rx="62" ry="62" fill="none" stroke="#139c80" stroke-width="6"/>
+  <text x="600" y="280" text-anchor="middle" font-family="Arial" font-size="30" fill="#1f2430">After an edit</text>
+</svg>

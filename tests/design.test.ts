@@ -176,6 +176,14 @@ test("embedded content is texture, and text hidden by a crop isn't read", async 
   assert.ok(!r.fonts.includes("Consolas"));
 });
 
+test("visual tension: a ring whose curve runs through a label is named; one clear of it isn't", async () => {
+  const r = await load("ring-label.svg");
+  const found = (await check(r, await measure(r.png))).find((f) => f.rule === "visual-tension");
+  assert.ok(found, "the ring through the label");
+  assert.match(found.message, /"Before an edit"/);
+  assert.ok(!found.message.includes("After an edit"));
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });

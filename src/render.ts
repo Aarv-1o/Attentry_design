@@ -25,6 +25,7 @@ export interface TextBox {
   // Where it came from: real text, lettering drawn as shapes and marked with data-text, or read
   // from the pixels by OCR (a fallback, less certain).
   source?: "text" | "drawn" | "ocr";
+  holder?: Box; // HTML: the nearest ancestor that draws a background or border (its card, bubble, pill)
 }
 
 export interface Rendered {
@@ -37,6 +38,7 @@ export interface Rendered {
   texts: TextBox[];
   cut: Box[]; // small painted shapes that run past the frame's edge
   panels: Box[]; // painted shapes big enough to hold text (cards, bubbles, buttons, panels)
+  rings: Box[]; // outlined circles and ellipses (their curve can run through text)
 }
 
 // One browser for the whole run, shared by every render (launched once even when renders start
@@ -75,7 +77,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
   // A generated image is only pixels: nothing to read from a source, lettering comes from OCR.
   if (RASTER.has(extname(file).toLowerCase())) {
     const { data, info } = await sharp(file).png().toBuffer({ resolveWithObject: true });
-    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [], panels: [] };
+    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [], panels: [], rings: [] };
   }
   const page = await (await getBrowser()).newPage({
     viewport: { width: options.width ?? 1200, height: options.height ?? 800 },
@@ -88,7 +90,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
     await page.evaluate("document.fonts.ready");
     const viewport = page.viewportSize()!;
     const png = await page.screenshot({ type: "png" });
-    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut" | "panels">;
+    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut" | "panels" | "rings">;
     return { file, png, width: viewport.width, height: viewport.height, ...read };
   } finally {
     await page.close();
@@ -109,7 +111,7 @@ const SVG_SIZE = `(() => {
 export const READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
-  const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [];
+  const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [], rings = [];
   const panel = (r) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height }); };
   const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
@@ -162,18 +164,32 @@ export const READ_DESIGN = `(() => {
       for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
       const r = el.getBoundingClientRect();
       panel(r);
+      const tag = el.tagName.toLowerCase();
+      if ((tag === "circle" || tag === "ellipse") && visible(style.stroke) && parseFloat(style.strokeWidth) > 0 && r.width > 4 && rings.length < 100) {
+        rings.push({ x: r.x, y: r.y, width: r.width, height: r.height });
+      }
       const small = r.width * r.height < 0.02 * vw * vh;
       if (small && r.width > 0 && (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) && cut.length < 200) {
         cut.push({ x: r.x, y: r.y, width: r.width, height: r.height });
       }
     } else {
-      if (visible(style.backgroundColor)) { colors.add(style.backgroundColor); panel(el.getBoundingClientRect()); }
+      if (visible(style.backgroundColor)) colors.add(style.backgroundColor);
       if (parseFloat(style.borderTopWidth) > 0 && visible(style.borderTopColor)) colors.add(style.borderTopColor);
     }
     const own = Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE)
       .map((n) => n.textContent || "").join("").trim();
     if (!own) continue;
-    const full = el.getBoundingClientRect();
+    // The words' own box, not the element's: a block element spans its whole card even when its
+    // few centered words don't (a Range over the text nodes measures the glyphs' line boxes).
+    let full = el.getBoundingClientRect();
+    if (!svg) {
+      const range = document.createRange();
+      const nodes = Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE && (n.textContent || "").trim());
+      range.setStartBefore(nodes[0]);
+      range.setEndAfter(nodes[nodes.length - 1]);
+      const g = range.getBoundingClientRect();
+      if (g.width > 0 && g.height > 0) full = g;
+    }
     if (full.width === 0 || full.height === 0) continue;
     const r = shown(el, full);
     if (!r) continue; // hidden by a crop or a scrolled panel
@@ -183,12 +199,25 @@ export const READ_DESIGN = `(() => {
     fonts.add(family);
     const opacity = opacityOf(el);
     const scale = !svg && el.offsetHeight ? full.height / el.offsetHeight : 1;
+    // The box the text sits in: for HTML, the nearest ancestor that draws a background or border
+    // (DOM nesting knows what's in what, and what's on top; geometry alone doesn't).
+    let holder;
+    if (!svg) {
+      for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+        const s = getComputedStyle(e);
+        if (visible(s.backgroundColor) || (parseFloat(s.borderTopWidth) > 0 && visible(s.borderTopColor))) {
+          const b = shown(e, e.getBoundingClientRect());
+          if (b && b.width * b.height < 0.9 * vw * vh) holder = b;
+          break;
+        }
+      }
+    }
     texts.push({
-      text: own, color, fontFamily: family,
+      holder, text: own, color, fontFamily: family,
       fontSize: parseFloat(style.fontSize), size: parseFloat(style.fontSize) * scale, opacity,
       bold: parseInt(style.fontWeight, 10) >= 600, source: "text",
       box: { x: r.x, y: r.y, width: r.width, height: r.height },
     });
   }
-  return { colors: [...colors], fonts: [...fonts], texts, cut, panels };
+  return { colors: [...colors], fonts: [...fonts], texts, cut, panels, rings };
 })()`;

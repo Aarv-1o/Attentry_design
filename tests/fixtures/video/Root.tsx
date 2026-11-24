@@ -65,11 +65,24 @@ const CardPromo = () => {
   );
 };
 
+// A step label with a ring drawn around its icon that cuts through the label (the explainer's
+// first version), held for the whole video.
+const RingPromo = () => (
+  <AbsoluteFill style={{ background: "#f7f1e3", fontFamily: font }}>
+    <svg width={1920} height={1080} style={{ position: "absolute" }}>
+      <circle cx={960} cy={420} r={70} fill="none" stroke="#1f2430" strokeWidth={8} />
+      <ellipse cx={960} cy={460} rx={170} ry={180} fill="none" stroke="#139c80" strokeWidth={8} />
+    </svg>
+    <div style={{ position: "absolute", left: 760, width: 400, top: 590, textAlign: "center", fontSize: 56, color: "#1f2430" }}>Before an edit</div>
+  </AbsoluteFill>
+);
+
 export const Root = () => (
   <>
     <Composition id="BadPromo" component={BadPromo} {...common} />
     <Composition id="GoodPromo" component={GoodPromo} {...common} />
     <Composition id="DriftPromo" component={DriftPromo} {...common} />
     <Composition id="CardPromo" component={CardPromo} {...common} />
+    <Composition id="RingPromo" component={RingPromo} {...common} />
   </>
 );

@@ -5,7 +5,7 @@ import sharp from "sharp";
 import type { TextBox } from "./render.ts";
 import type { Composition, VideoFrame } from "./remotion.ts";
 import { labPixels, layoutDistance } from "./measure.ts";
-import { contrastFinding, edge, offLock, pixelEdges, short } from "./check.ts";
+import { contrastFinding, edge, offLock, pixelEdges, short, tension } from "./check.ts";
 import type { DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
 
@@ -107,6 +107,26 @@ export async function checkVideo(c: Composition, frames: VideoFrame[], lock?: De
       kind: "default",
       message: `${nearEdge.length} text${nearEdge.length === 1 ? "" : "s"} within ${Math.round(VIDEO_MARGIN * Math.min(c.width, c.height))} px of the edge, where platforms crop or overlay: ${nearEdge.map((x) => `"${short(x)}"`).join(", ")}.`,
       source: "Attentry Design rules L1: a 5% margin",
+    });
+  }
+
+  // Visual tension in any sampled frame, named once per text.
+  const tense = new Map<string, Finding>();
+  for (const f of frames) {
+    const shown = f.texts.filter((t) => t.opacity >= SEEN);
+    // Crowded frames (a whole IDE) are texture: only caption-sized text in them counts, as above.
+    const crowded = shown.length > CROWDED;
+    for (const t of shown.filter((t) => !crowded || t.size / c.height >= CAPTION_SIZE)) {
+      const [hit] = tension(f, [t]);
+      if (hit && !tense.has(t.text)) tense.set(t.text, { ...hit, message: hit.message.replace(/^"[^"]*"/, `"${short(t.text)}" (at ${f.time.toFixed(1)} s)`) });
+    }
+  }
+  if (tense.size) {
+    findings.push({
+      rule: "visual-tension",
+      kind: "default",
+      message: `Text almost touching or crossed by a shape's edge: ${[...tense.values()].map((f) => f.message.split(" almost")[0]).join(", ")}. Give clear room, or let it clearly overlap.`,
+      source: "Glitschka, Vector Basic Training pp. 189–191 (visual tension)",
     });
   }
 

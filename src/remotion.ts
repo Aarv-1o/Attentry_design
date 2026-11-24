@@ -11,7 +11,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { Page } from "playwright-core";
-import { getBrowser, READ_DESIGN, type Rendered, type TextBox } from "./render.ts";
+import { getBrowser, READ_DESIGN, type Box, type Rendered, type TextBox } from "./render.ts";
 
 export interface Composition {
   id: string;
@@ -30,6 +30,8 @@ export interface VideoFrame {
   texts: TextBox[];
   colors: string[];
   fonts: string[];
+  panels: Box[];
+  rings: Box[];
 }
 
 const TIMEOUT = 30_000;
@@ -129,7 +131,7 @@ export class RemotionProject {
       await this.ready();
       await this.page.evaluate("document.fonts.ready");
       const png = await this.page.screenshot({ type: "png" });
-      const read = (await this.page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts">;
+      const read = (await this.page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "panels" | "rings">;
       out.push({ frame, time: frame / c.fps, png, ...read });
     }
     return out;
