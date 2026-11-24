@@ -26,6 +26,7 @@ test("the brief walks through the stages; a quick request goes straight to the c
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   const full = await brief("make an invitation illustration", project);
   for (const word of ["Brief", "check_options", "lock_design", "check_design", "not taste"]) assert.ok(full?.includes(word), word);
+  assert.match(full!, /decline the questions, don't stop/);
   const quick = await brief("just a quick poster for tonight", project);
   assert.ok(quick?.includes("check_design"));
   assert.ok(!quick?.includes("check_options"));

@@ -52,7 +52,7 @@ export async function brief(prompt: string, project: string): Promise<string | u
       : "draw each option small, as its own SVG or HTML file";
   return [
     `Attentry Design: this is ${kind === "illustration" ? "an" : "a"} ${kind} request. Before drawing:`,
-    "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: what it's for, who sees it, where it's used and at what size, the exact text, the mood, anything it must have or avoid.",
+    "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: what it's for, who sees it, where it's used and at what size, the exact text, the mood, anything it must have or avoid. If they skip or decline the questions, don't stop: choose sensible answers yourself, state them in one line, and go on to the options, where they choose by looking.",
     `2. Options. Then ${options}: 2–3 for something small, up to ${MAX_OPTIONS} for a key image. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette. Call check_options with the files, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
     "3. Lock. Call lock_design with the chosen file and a short name.",
     "4. Finish. Make it full size, call check_design with the file and the lock, fix the errors, and mention the suggestions without forcing them.",
