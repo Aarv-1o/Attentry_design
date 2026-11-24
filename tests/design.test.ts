@@ -31,6 +31,11 @@ test("render reads an SVG's size, painted colors, fonts and text", async () => {
   assert.deepEqual(r.texts.map((t) => t.text), ["Maya & Leo", "June 14, Lisbon"]);
 });
 
+test("render: a line's unpainted default fill isn't a color in the design", async () => {
+  const r = await load("divider-line.svg");
+  assert.deepEqual(r.colors.sort(), ["rgb(217, 164, 65)", "rgb(43, 33, 24)"]);
+});
+
 test("options: two copies of the default invitation are flagged on every axis", async () => {
   const { findings } = await compareOptions([await load("invite-centered.svg"), await load("invite-centered-again.svg")]);
   assert.deepEqual(findings.map((f) => f.rule).sort(), ["options-all-centered", "options-same", "options-same-palette", "options-same-values"]);

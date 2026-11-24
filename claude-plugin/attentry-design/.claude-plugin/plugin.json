@@ -1,0 +1,8 @@
+{
+  "name": "attentry-design",
+  "displayName": "Attentry Design",
+  "description": "When you ask Claude to design something, Attentry Design makes sure the brief is asked, the options really differ, your choice is kept and the result has no errors. Checked on your machine, without AI. It never judges taste.",
+  "author": { "name": "Aarv Singh Chauhan" },
+  "license": "MIT",
+  "keywords": ["design", "illustration", "video", "quality", "agents"]
+}

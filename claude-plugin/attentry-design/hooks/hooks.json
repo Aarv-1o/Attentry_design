@@ -1,0 +1,8 @@
+{
+  "description": "Attentry Design: when the person asks for a design, the stages to follow before drawing.",
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/dist/attentry-design.mjs", "hook"], "timeout": 30 }] }
+    ]
+  }
+}

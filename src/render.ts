@@ -105,7 +105,9 @@ const READ_DESIGN = `(() => {
       continue;
     }
     if (svg && PAINTS.has(el.tagName.toLowerCase())) {
-      for (const c of [style.fill, style.stroke]) if (visible(c) && !c.startsWith("url(")) colors.add(c);
+      // A <line> has no inside, so its fill (black by default) is never painted.
+      const paints = el.tagName.toLowerCase() === "line" ? [style.stroke] : [style.fill, style.stroke];
+      for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
     } else {
       if (visible(style.backgroundColor)) colors.add(style.backgroundColor);
       if (parseFloat(style.borderTopWidth) > 0 && visible(style.borderTopColor)) colors.add(style.borderTopColor);

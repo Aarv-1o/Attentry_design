@@ -1,0 +1,63 @@
+// Stage 1: notice that the person asked for a design and tell the agent how to go about it before
+// it draws anything: ask the brief, make real options, lock the pick, check the result. Short, as
+// the agent pays for every word, and silent for everything that isn't a design request.
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { LOCK_DIR } from "./lock.ts";
+import { MAX_OPTIONS } from "./options.ts";
+
+export type DesignKind = "illustration" | "video";
+
+// A request is a design request when it names a visual thing and nothing in it points at code:
+// "an invitation illustration for my sister" is one; "fix the video player crash" is not.
+const CODE = /\b(fix|bug|error|crash(es)?|null|undefined|field|api|endpoint|tests?|refactor|rename|function|schema|query|route|deploy|player|upload|import|props?)\b/i;
+const VIDEO = /\b(video|animation|animated|motion graphics?|promo|trailer|storyboard|remotion|reel|explainer)\b/i;
+const ILLUSTRATION =
+  /\b(illustrations?|invitations?|invites?|posters?|flyers?|banners?|hero (image|art|graphic)|cover (art|image)|thumbnails?|artwork|drawing|graphics?|icons? set|card design|greeting card|social (post|image|graphic)|og image|scene)\b/i;
+const QUICK = /\b(quick(ly)?|just a|rough|no options|skip the options)\b/i;
+
+export function designKind(prompt: string): DesignKind | undefined {
+  if (CODE.test(prompt)) return undefined;
+  if (VIDEO.test(prompt)) return "video";
+  if (ILLUSTRATION.test(prompt)) return "illustration";
+  return undefined;
+}
+
+export async function existingLocks(project: string): Promise<string[]> {
+  try {
+    return (await readdir(join(project, LOCK_DIR))).filter((f) => f.endsWith(".lock.json")).map((f) => f.slice(0, -".lock.json".length));
+  } catch {
+    return [];
+  }
+}
+
+export async function brief(prompt: string, project: string): Promise<string | undefined> {
+  const kind = designKind(prompt);
+  if (!kind) return undefined;
+  const locks = await existingLocks(project);
+  const lockLine = locks.length
+    ? `This project has design locks: ${locks.join(", ")}. If the request continues one, skip to step 4 and check against it.`
+    : "";
+
+  if (QUICK.test(prompt)) {
+    return [
+      `Attentry Design: a quick ${kind} request. Make it, then call check_design on the file and fix what it marks as errors.`,
+      lockLine,
+    ].filter(Boolean).join("\n");
+  }
+
+  const options =
+    kind === "video"
+      ? "draw a storyboard per option: one SVG or HTML file with 4–6 key frames side by side"
+      : "draw each option small, as its own SVG or HTML file";
+  return [
+    `Attentry Design: this is ${kind === "illustration" ? "an" : "a"} ${kind} request. Before drawing:`,
+    "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: what it's for, who sees it, where it's used and at what size, the exact text, the mood, anything it must have or avoid.",
+    `2. Options. Then ${options}: 2–3 for something small, up to ${MAX_OPTIONS} for a key image. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette. Call check_options with the files, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
+    "3. Lock. Call lock_design with the chosen file and a short name.",
+    "4. Finish. Make it full size, call check_design with the file and the lock, fix the errors, and mention the suggestions without forcing them.",
+    "5. End with a short design card: the file, the lock, and what was found and fixed.",
+    "Attentry Design checks quality, not taste: the person's choices win.",
+    lockLine,
+  ].filter(Boolean).join("\n");
+}

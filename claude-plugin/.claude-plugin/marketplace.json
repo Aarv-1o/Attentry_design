@@ -1,0 +1,12 @@
+{
+  "name": "attentry-design",
+  "description": "Attentry Design for Claude Code.",
+  "owner": { "name": "Aarv Singh Chauhan" },
+  "plugins": [
+    {
+      "name": "attentry-design",
+      "source": "./attentry-design",
+      "description": "Better illustrations and videos from your agent: the brief asked, real options, your choice kept, the result checked. No AI, never taste."
+    }
+  ]
+}

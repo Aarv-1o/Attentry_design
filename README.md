@@ -7,10 +7,10 @@ and the result has no errors. On your own machine, without another AI model, and
 taste. It starts with SVG/HTML illustration, [Remotion](https://www.remotion.dev) videos and
 Claude Code.
 
-**Status: building, step 1 of 4.** The plan is agreed (five stages: brief, options, lock,
+**Status: building, step 2 of 4 done.** The plan is agreed (five stages: brief, options, lock,
 finish, card; illustration and video first). The engine that renders designs, checks whether
-options really differ, keeps the chosen one as a lock and checks the result works as a command;
-the Claude Code plugin comes next.
+options really differ, keeps the chosen one as a lock and checks the result works as a command
+and as a Claude Code plugin; video comes next.
 
 ## Two halves
 
@@ -30,6 +30,7 @@ lacked, and only looking at the frames caught how badly some of it was first dra
 | Path | What it is |
 |---|---|
 | [src](src) | The engine (step 1): render a design, compare options, lock one, check the result |
+| [claude-plugin](claude-plugin) | The Claude Code plugin: the brief hook, the three tools, the design skill |
 | [tests](tests) | Tests and fixture designs each check must flag or pass |
 | [docs/attentry-design.md](docs/attentry-design.md) | The plan: the five design stages, the first checks, the stack, the order |
 | [docs/attentry-design-research.md](docs/attentry-design-research.md) | Why: what goes wrong in AI-made video, what existing tools miss |
@@ -57,6 +58,15 @@ node --import tsx src/cli.ts check final.svg --lock invitation              # er
 ```
 
 HTML designs take `--size 1200x630`.
+
+To try it inside Claude Code for one session (nothing is installed into your Claude setup):
+
+```
+npm run build
+claude --plugin-dir path/to/Attentry_design/claude-plugin/attentry-design
+```
+
+Then ask for a design, like "an invitation illustration for my sister's wedding".
 
 ## Running the experiment
 

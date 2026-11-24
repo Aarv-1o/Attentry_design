@@ -114,7 +114,10 @@ Written by hand, because no library fits: the diversity report, the subject-posi
    diversity report), `attentry-design lock`, `attentry-design check <file>`, for SVG
    illustrations. Fixtures for every check. Tried on illustrations made the plain way and the
    staged way, like the direction test of 2026-11-19.
-2. **Claude Code.** The brief hook and the three MCP tools, as a plugin, standalone at first.
+2. **Claude Code** (built 2026-11-24, `claude-plugin/`). The brief hook and the three MCP tools, as a
+   plugin. Tried in a real session: three options that differ, a lock, a finished design checked
+   clean. sharp and playwright-core resolve from the repo's node_modules for now; shipping them is
+   step 4.
 3. **Video.** Remotion stills for storyboard options, frame checks from the rules doc.
 4. **Packaging.** The VS Code extension and the stores, the site page, then Codex. Decide here how
    it takes Attentry's plumbing (hooks install, background process, Check setup): a package
