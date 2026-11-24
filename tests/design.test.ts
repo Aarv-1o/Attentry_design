@@ -168,6 +168,14 @@ test("visual tension: a label crammed against its card's edge is named; one with
   assert.ok(!found.message.includes("Roll back"));
 });
 
+test("embedded content is texture, and text hidden by a crop isn't read", async () => {
+  const r = await load("embed-crop.html", { width: 800, height: 600 });
+  const texts = r.texts.map((t) => t.text);
+  assert.deepEqual(texts.sort(), ["How it works", "visible line"]);
+  assert.ok(!r.colors.includes("rgb(156, 220, 254)"), "the screenshot's code color isn't a design color");
+  assert.ok(!r.fonts.includes("Consolas"));
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });

@@ -114,6 +114,21 @@ export const READ_DESIGN = `(() => {
   const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
   const opacityOf = (el) => { let o = 1; for (let e = el; e; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+  // What of a box is really visible: cut to every ancestor that hides its overflow (a crop, a
+  // scrolling panel). The frame's own edge isn't applied here: text cut by it is a finding.
+  const shown = (el, r) => {
+    let x1 = r.left, y1 = r.top, x2 = r.right, y2 = r.bottom;
+    for (let e = el.parentElement; e; e = e.parentElement) {
+      const s = getComputedStyle(e);
+      if (s.overflowX === "visible" && s.overflowY === "visible") continue;
+      const c = e.getBoundingClientRect();
+      x1 = Math.max(x1, c.left); y1 = Math.max(y1, c.top); x2 = Math.min(x2, c.right); y2 = Math.min(y2, c.bottom);
+    }
+    return x2 - x1 < 1 || y2 - y1 < 1 ? null : { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+  };
+  // Embedded content (a screenshot, the real UI shown inside a design, a photo) is marked
+  // data-embed: it's texture, not the design, so its colors, fonts and text aren't judged.
+  const embedded = (el) => !!el.closest("[data-embed]");
   // Lettering drawn as shapes (pixel art, hand-drawn type): the agent marks each line with
   // data-text="the words". Its box is the group's; its color is the group's most used fill; its
   // size is font-size equivalent (a capital's height is about 0.72 of the font size).
@@ -133,6 +148,7 @@ export const READ_DESIGN = `(() => {
     });
   }
   for (const el of document.querySelectorAll("*")) {
+    if (embedded(el)) continue;
     const style = getComputedStyle(el);
     if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") continue;
     const svg = el instanceof SVGElement;
@@ -157,14 +173,16 @@ export const READ_DESIGN = `(() => {
     const own = Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE)
       .map((n) => n.textContent || "").join("").trim();
     if (!own) continue;
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) continue;
+    const full = el.getBoundingClientRect();
+    if (full.width === 0 || full.height === 0) continue;
+    const r = shown(el, full);
+    if (!r) continue; // hidden by a crop or a scrolled panel
     const color = svg ? style.fill : style.color;
     colors.add(color);
     const family = style.fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
     fonts.add(family);
     const opacity = opacityOf(el);
-    const scale = !svg && el.offsetHeight ? r.height / el.offsetHeight : 1;
+    const scale = !svg && el.offsetHeight ? full.height / el.offsetHeight : 1;
     texts.push({
       text: own, color, fontFamily: family,
       fontSize: parseFloat(style.fontSize), size: parseFloat(style.fontSize) * scale, opacity,

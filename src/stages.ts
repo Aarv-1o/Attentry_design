@@ -127,7 +127,11 @@ export async function runVideoOptions(project: string, entry: string, ids: strin
 }
 
 export async function runVideoLock(project: string, entry: string, id: string, name: string, style?: string): Promise<StageResult> {
-  return withVideo(project, entry, async (remotion, find) => lockOf(project, await storyboardOf(project, entry, remotion, find(id)), name, style));
+  return withVideo(project, entry, async (remotion, find) => {
+    const c = find(id);
+    // The lock keeps the video's own size, not the storyboard's.
+    return lockOf(project, { ...(await storyboardOf(project, entry, remotion, c)), width: c.width, height: c.height }, name, style);
+  });
 }
 
 export async function runVideoCheck(project: string, entry: string, id: string, lockName?: string): Promise<StageResult> {
