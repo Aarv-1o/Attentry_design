@@ -93,6 +93,11 @@ and anything else, including generated images (PNG, JPG, WebP now accepted), wit
 for the edge and size checks, not contrast). Also new: no clear headline (three or more texts
 within 1.5x of each other) and small shapes cut by the frame, both suggestions.
 
+Added 2026-11-24 from the style books: the brief offers five styles (hand-drawn, flat vector,
+isometric, 3D look, pixel art) with a craft note for the one named; Roam's <6><6> rule (draw a
+process as a flow, a sequence as a timeline); a mixels check for pixel-art locks; a reader test and
+phone-size check for text.
+
 Later: hot skin and two eye levels in generated images, OCR on video frames, more direction
 cards, copy.
 

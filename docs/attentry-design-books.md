@@ -118,6 +118,22 @@ Stanchfield.
 | Walt Stanchfield, *Drawn to Life* | Gesture and intent in drawing: why stiff, posed figures read as fake |
 | Hans Bacher, *Dream Worlds* (already listed) | Production design and visual development for animation |
 
+## The five world styles (added 2026-11-24)
+
+The styles the brief offers: hand-drawn, flat vector, isometric, 3D look, pixel art (chosen from
+2026 trend reports; none measures performance, so these are well-supported picks, not a ranking).
+Read 2026-11-24 (two passes, notes in attentry-design-book-notes.md):
+
+| Book | For |
+|---|---|
+| Michael Azzi, *Pixel Logic* | Pixel art: lines, anti-aliasing, color, readability, mixels, isometric (read) |
+| Jennifer Dawe & Matthew Humphries, *Make Your Own Pixel Art* | Pixel art basics (read) |
+| Dan Roam, *The Back of the Napkin* | Hand-drawn explaining: the right picture for each kind of idea (read) |
+| Von Glitschka, *Vector Basic Training* | Flat vector: clean anchor points and curves (read) |
+
+Still to find: a book on isometric illustration, one on the 3D look, and Stanchfield's *Drawn to
+Life* (gesture, for hand-drawn figures).
+
 ## Free standards and papers (read online)
 
 - Netflix Timed Text Style Guide (reading speed, line length, duration)

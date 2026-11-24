@@ -1657,3 +1657,181 @@ promise: a finding can cite an editor or an illustrator, not a guess about who m
 7. **Limits.** Most of what these books teach is direction (what to ask for), not a check. The
    rule ideas above are the measurable part. Each still needs fixtures it must flag and must not
    flag, and a run against the baseline before it ships.
+
+---
+
+## Style books (read 2026-11-24, two passes)
+
+For the five world styles (hand-drawn, flat vector, isometric, 3D look, pixel art). Same legend:
+**Rule idea**, **Direction**, **Context**. Page numbers are the printed pages.
+
+## Michael Azzi, *Pixel Logic: Pixel Art Tutorials* (2022 edition)
+
+(Printed pages match the PDF pages.)
+
+- **What pixel art is** (p. 6): "Pixel art are computer graphics where placing each pixel is
+  intentional." Automatic tools (blur, blurred gradients, smooth brushes) are to be avoided
+  because "the artist can't predict how the result will turn out" (p. 18). **Context:** grounds the
+  pixel-edges check: software smoothing is what breaks the style.
+- **Mixels** (p. 21): "when resizing ALWAYS stick to WHOLE NUMBERS"; "NEVER EVER mix different
+  aspect ratios. These are called Mixels." "Never combine rotated or resized pixel art in a piece."
+  **Rule idea:** the clearest measurable pixel-art fault: two pixel-cell sizes in one picture (the
+  person's GitHub test drew the hero and icons at 2x next to 1x cards and labels). Measured from
+  the run lengths of same-colored pixels per region.
+- **Sprite to canvas ratio** (p. 20): Metroid II's character is "about 4% of the screen", Super
+  Metroid's "about 2,5%", Cave Story's "about 0.33%" ("visible but minimalist"). **Context:** the
+  size of a figure sets how much it can show (with p. 88).
+- **One line width** (p. 24): "Keep the same line width throughout the whole sprite!" "Most pixel
+  art has 1px line art." **Rule idea:** mixed outline widths in one sprite (measurable on a grid).
+- **Jaggies and staircases** (pp. 26–27): "jaggies are UNAVOIDABLE. So fix them!"; "Pixel art loves
+  lines that have the same 'stairs'"; "DON'T MIX STAIRCASES." **Rule idea:** a line whose step
+  lengths change irregularly (1-2-1-3); hard but possible on drawn lines. **Direction:** draw the line,
+  then "chisel away parts you don't need".
+- **Outline styles** (pp. 30–37): no outline, black inline, black contour, colored outline, shaded
+  outline; black inlines make modern sprites "rather muddy" (p. 31). **Direction:** an outline
+  style is a style choice, kept the same for every sprite in the picture.
+- **Anti-aliasing, by hand** (pp. 39–45): AA "bridges the gap between 2 colours"; "For letters,
+  numbers and typography, AA is always the best solution" (p. 41); "heavy AA turns it blurry. Too
+  much is too much!" (p. 42); "Too little is better than too much. … Too much AA blurs the line
+  between pixel art and vector art!" (p. 45). **Context:** hand AA adds a few colors, software
+  smoothing hundreds: the pixel-edges check's limit of 64 allows the first and catches the second.
+- **Banding** (pp. 55–57): "Banding is BAD. This happens when two rows of pixels perfectly hug each
+  other." It "makes your curves look blocky" and leads to pillow shading (p. 56). **Rule idea:**
+  parallel runs of equal length in two colors along an edge (measurable, later).
+- **Palettes and ramps** (pp. 65–66): palettes save time, keep work organized, make animation
+  easier; reuse colors across ramps. "For small sprites, one ramp of 2-3 colours is enough" (p. 76);
+  "16 colours is usually the limit for most sprites" (p. 81). **Rule idea:** colors per sprite
+  far above that; colors that differ too little to see at 1x.
+- **Hue shifting** (pp. 67–69): shading by shifting hue, not only value: "The shadow is boring
+  black" versus "warm red"; "people often hue shift from yellow to purple" (p. 69). **Direction.**
+- **Black tones** (pp. 72–75): many games tint their black or use a dark grey; "Try avoiding pure
+  blacks unless it's truly necessary" (p. 75). **Direction:** with Yot and Gurney (shadows are never
+  neutral).
+- **Readability is the first priority** (pp. 79, 87): "Readability is the #1 priority when choosing
+  colours" (Paul Veer); "Readability means Clarity. How easy is it for the viewer to understand what
+  you drew?" **Context:** the same aim as the reader test on lettering.
+- **Size against detail** (pp. 88, 95): "SMALLER sprites make it HARDER to convey things"; "Try to
+  figure out the smallest part that needs to be visible. Once you've got that down, it's easy to
+  figure out the minimal sprite size you can work with." "If you have the slightest doubt about your
+  sprite being readable or not, ask someone else, and don't tell them what it's supposed to be!"
+  **Direction:** replaces the brief's fixed "24 squares" with this question (does the face need an
+  expression? the hands a gesture?).
+- **Simple shapes at small sizes** (pp. 92, 96–98): "For small sprites, simplicity usually works.
+  Don't overdo details and stick to simple shapes"; hands "like mittens", index finger and thumb
+  first. **Direction.**
+- **Eyes and faces** (p. 99): "Eyes are the main focus on character sprites"; "People identify
+  faces by looking for eyes." **Direction:** with Gurney's eye-tracking (faces win).
+- **Silhouette and color design** (pp. 103–104): a clear silhouette shows head, limbs, the action;
+  "Break them down to 2 or 3 main colours like other recognizable characters." **Direction.**
+- **Spacing and tangents** (pp. 106, 180): "If two areas of the pixel drawing touch, the viewer may
+  have a hard time telling what's going on"; "give it more room to breathe! Think of it like
+  letter-spacing with fonts!" **Rule idea:** text or features touching their frame (the GitHub
+  test's labels touching card borders).
+- **Sprites against backgrounds** (pp. 109–110): sprites must stand out: outlines, softer background
+  colors, background out of focus. **Rule idea:** low contrast between the main sprite and what's
+  behind it.
+- **Dithering, with care** (pp. 116–117, 133): "Too much dithering causes your pixel art to look
+  ROUGH and GRAINY"; "do NOT animate dithering"; useful for skies and vast backgrounds; "LESS is
+  MORE." Random dithering from filters "isn't really handcrafted pixelart" (p. 124). **Direction.**
+- **Isometric is 2:1** (p. 146): exact 30° lines aren't possible in pixels, "so everyone uses stairs
+  of 2 pixels. This is technically 26.5°". Draw diamonds as lineless checkerboards to avoid chunky
+  crossings (p. 147). **Rule idea:** for the isometric style: edges at 2:1 (26.57°) consistently;
+  mixed angles are a fault. **Context:** applies to vector isometric too.
+- **Fake it, in a good way** (p. 156): Iwata on top-down views: "If you make it truthfully, it
+  doesn't look interesting at all. So you have to fake it - but in a good way." **Context.**
+- **Cleaner shapes** (pp. 170–172): pixels of one color form shapes; "Cleaner shapes convey the most
+  information and will often look better"; Stanchfield's "lazy lines": "lines that didn't describe
+  anything". **Rule idea:** stray single pixels of a color (noise) inside a sprite. **Direction.**
+- **Scaling is redrawing** (p. 177): a resized sprite becomes "a pixelated mosaic"; use it as a base
+  and redraw. **Context:** with mixels: doubling pixels is not a way to make a sprite bigger.
+- **Check at 1x and blurred** (p. 112): "make sure to zoom out a lot"; blur the picture to find
+  banding and unreadable areas. **Direction + Rule idea:** a 1x, blurred view in the contact sheet.
+- **Multiple versions** (p. 174): make several and have people pick. **Context:** stage 2 in
+  miniature.
+
+## Jennifer Dawe & Matthew Humphries, *Make Your Own Pixel Art* (2019)
+
+(A beginner's course in Aseprite; most of its craft content repeats Pixel Logic. Printed pages.)
+
+- **Silhouette first, then light** (p. 29): "always start with the character's silhouette before
+  adding lighting. Then build up your volume slowly, using as few colors as possible." **Direction.**
+- **Where the eye rests** (p. 113): "Our eyes concentrate on small details and relax on large
+  areas." Small details carry a character's identity (p. 116). **Direction:** spend detail on the
+  face and the one identifying feature, not evenly.
+
+## Dan Roam, *The Back of the Napkin* (2008)
+
+(Hand-drawn pictures for explaining ideas. Printed pages; the PDF runs 14 pages ahead.)
+
+- **Six ways of seeing** (pp. 78–86): we see who/what, how many, where, when, how and why, through
+  separate pathways in the brain (the "where pathway" and the "what pathway", p. 81). How "isn't
+  something we distinctly see on its own. Hows are usually combinations" (p. 84). **Context.**
+- **The <6><6> rule** (pp. 133–134): "For every one of the six ways of seeing, there is one
+  corresponding way of showing." "Who/what becomes a portrait, how many becomes a chart, where
+  becomes a map, when becomes a timeline, how becomes a flowchart, and why becomes a
+  multiple-variable plot." **Direction:** the strongest single addition to the brief: name the
+  kind of idea each part is, and draw it as that kind of picture. In the GitHub test, "branch &
+  merge" (a when/how idea) was drawn as an object, and didn't read; "back up code" (a what) as a
+  chest, and did.
+- **SQVID** (pp. 107–125): five questions for any picture: Simple or Elaborate, Quality or
+  Quantity, Vision or Execution, Individual or Comparison, Delta (change) or Status quo. "The SQVID
+  helps us imagine what visual messages we'd like to convey before we start worrying about which
+  picture we're going to draw" (p. 106). **Direction:** a second axis for the options stage: let
+  options differ in how they explain (simple or elaborate, before-and-after or one state), not only
+  in composition and palette.
+- **Simple is not the opposite of complex** (pp. 112–113): "the opposite of 'simple' is not
+  'complex,' but rather 'elaborate.'" "The real goal of visual thinking is to make the complex
+  understandable by making it visible—not by making it simple." **Context:** the level of detail
+  follows the audience, which the brief already asks for.
+- **Showing comes last** (p. 129): people who "start the process with showing ... get so distracted
+  by drawing skills, computer programs, and visual polish that they miss the real value of this
+  step." **Context:** why the brief and the message come before the options.
+- **Precognitive cues** (p. 72): proximity, color, size, orientation, direction, shape and shading
+  are seen without effort; "Our eyes notice differences in shapes somewhat less well." **Rule
+  idea:** grouping by proximity and color must match the meaning (related things near each other,
+  one color per role).
+
+## Von Glitschka, *Vector Basic Training* (2010)
+
+(Building precise vector shapes. Printed pages; the PDF runs 17 pages ahead.)
+
+- **Good, bad and ugly points** (pp. 72–75): "A Bézier curve or path is only as elegant, graceful,
+  or accurate as the anchor points that control and shape it." Wrong point types, non-parallel and
+  overextended handles make shapes "less graceful and more clunky". **Context.**
+- **The vector no-fly list** (pp. 77–78): an incorrect anchor point ("If a curve looks pointed, then
+  an incorrect anchor point is being used"), flat curves from handles pulled too far, non-parallel
+  handles at an apex, one overextended handle spanning a gap two should share. **Rule idea:** all
+  measurable from SVG path data: near-but-not-smooth joins (a small angle between tangents where a
+  curve should flow), handles much longer than their segment.
+- **No more points than needed** (p. 105): "A well-built vector shape should contain only the amount
+  of anchor points needed to pull it off. No more, no less." Too many make the shape "clunky"; too
+  few show as "overextended Bézier curve handles" (p. 106). **Rule idea:** anchor-point density per
+  path far above what its shape needs (the mark of auto-traced or generated paths).
+- **The Clockwork Method** (pp. 88–96): place points at the 12, 3, 6 and 9 o'clock extremes of each
+  curve, rotating the clock to the shape; "Any area of your art that comes to a point gets a point"
+  (p. 94). **Direction:** for code-drawn vector art: curves built from their extremes.
+- **Change your perspective** (p. 82): rotate, flip or enlarge the art to see problems the eye has
+  got used to. **Direction:** with Pixel Logic's 1x and blurred view.
+
+---
+
+## What the style books change
+
+1. **A rule for meaning, the one the checks lacked.** Roam's <6><6> rule (pp. 133–134) ties each
+   kind of idea to a kind of picture: who/what to a portrait, how many to a chart, where to a map,
+   when to a timeline, how to a flowchart, why to a multiple-variable plot. The brief now asks for
+   it. It explains the GitHub test's weak card: "branch & merge" is a when/how idea drawn as an
+   object.
+2. **Pixel art has measurable faults.** Mixels (Pixel Logic p. 21) are now a check: parts of one
+   picture at different pixel sizes. Mixed staircases, banding, stray pixels and mixed outline
+   widths (pp. 24, 27, 55, 170) are rule ideas for later. Hand-placed anti-aliasing is part of the
+   craft (p. 41), so the pixel-edges check only catches software smoothing.
+3. **Vector art has measurable faults too.** Glitschka's no-fly list (pp. 77–78, 105): wrong anchor
+   types, overextended handles, too many points. All readable from SVG path data: rule ideas for
+   code-drawn flat vector.
+4. **Isometric is 2:1** (Pixel Logic p. 146): every receding edge at 26.57°. A rule idea for the
+   isometric style.
+5. **Character size follows meaning** (Pixel Logic p. 95): the smallest part that must read sets the
+   size, replacing a fixed grid count.
+6. **Still missing for the five styles:** books on isometric and on the 3D look; Stanchfield's
+   *Drawn to Life* for the hand-drawn figures.
