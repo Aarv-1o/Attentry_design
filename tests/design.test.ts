@@ -136,6 +136,23 @@ test("OCR finds lettering in a generated image: a label at the edge", { timeout:
   assert.ok(edges.every((f) => f.message.startsWith("Lettering in the picture")));
 });
 
+test("text size at phone width: small labels are named; big ones aren't", async () => {
+  assert.ok((await rules("loud.svg")).includes("text-small")); // 18 px in a 600 px picture: 11 px on a phone
+  assert.ok(!(await rules("flat-labels.svg")).some((r) => r.startsWith("text-small") || r === "text-too-small"));
+});
+
+test("drawn lettering a reader misreads is a suggestion; lettering it reads is left alone", { timeout: 60_000 }, async () => {
+  const r = await load("github-pixel-cards.svg");
+  const found = await check(r, await measure(r.png));
+  const hard = found.find((f) => f.rule === "hard-to-read");
+  assert.ok(hard, JSON.stringify(found));
+  assert.equal(hard.kind, "default");
+  assert.ok(!hard.message.includes('"BRANCH & MERGE" as'));
+  const { similarity } = await import("../src/lettering.ts");
+  assert.equal(similarity("ROLL BACK", "roll back"), 1);
+  assert.ok(similarity("BACK UP CODE", "EBACE UF CODE") < 0.85);
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });

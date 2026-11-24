@@ -22,7 +22,8 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    is checked for pixel-sharp edges.
 4. **Finish.** Make it full size and call `check_design` with the file and the lock. Fix the
    errors. Mention the suggestions; don't force them.
-5. **Card.** End with a short design card: the file, the lock, and what was found and fixed.
+5. **Card.** End with a short design card: the file, the lock, what was found and fixed, and any
+   part that may not get its message across. Say so plainly; don't hide weak parts.
 
 **Remotion videos** use the same stages with the video tools: each option is a short composition
 (`check_video_options` with the entry file and the composition ids), then `lock_video`, then

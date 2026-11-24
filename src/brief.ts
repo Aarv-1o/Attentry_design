@@ -85,7 +85,7 @@ export async function brief(prompt: string, project: string): Promise<string | u
     "While drawing: build it around the single message. Plan the text first: one headline, labels clearly smaller (sizes at least 1.5× apart), and measure each line's width (characters × letter width) against the frame so every line stays inside a 5% margin. Lettering drawn as shapes (pixel art, hand-drawn type): wrap each line in <g data-text='the words'> so it can be measured. Make the main characters big enough to carry detail (in pixel art, about 24 grid squares tall or more).",
     `3. Lock. Call ${tools.lock}, a short name and the style.`,
     `4. Finish. Make it in full, call ${tools.check} and the lock, fix the errors, and mention the suggestions without forcing them.`,
-    "5. End with a short design card: what was made, the lock, and what was found and fixed.",
+    "5. End with a short design card: what was made, the lock, what was found and fixed, and any part that may not get its message across.",
     "Attentry Design checks quality, not taste: the person's choices win.",
     lockLine,
   ].filter(Boolean).join("\n");

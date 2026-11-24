@@ -6,7 +6,7 @@ import type { Rendered, TextBox } from "./render.ts";
 import type { Measures } from "./measure.ts";
 import { toHex, type DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
-import { findLettering } from "./lettering.ts";
+import { findLettering, readBack, similarity } from "./lettering.ts";
 
 const SAFE_MARGIN = 0.04; // of the shorter side
 
@@ -17,6 +17,8 @@ export interface Picture {
   height: number;
 }
 const HEADLINE_LEAD = 1.5; // how much bigger the headline should be than the typical text
+const PHONE_WIDTH = 360; // px: how wide a phone shows a post or a web image
+const READABLE = 0.85; // similarity of OCR's reading to the words below which lettering is hard to read
 const PIXEL_COLORS = 64; // distinct colors above which edges are smoothed, not pixel art
 const OFF_PALETTE = 0.03; // OKLab distance that still counts as the same color
 const oklab = differenceEuclidean("oklab");
@@ -32,6 +34,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     if (t.source !== "ocr") findings.push(...(await contrastFinding(rendered, t)));
     findings.push(...edge(rendered, t));
   }
+  findings.push(...phoneSize(rendered, texts), ...(await legibility(rendered)));
   if (rendered.cut.length) {
     findings.push({
       rule: "shapes-cut",
@@ -48,7 +51,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     findings.push({
       rule: "subject-centered",
       kind: "default",
-      message: "The subject sits dead center. Unless it's an icon, try placing it off center.",
+      message: "The picture's visual weight sits at its center. Unless it's an icon or meant to be still, try moving the main subject off center.",
       source: "Bang, Picture This, principle 5; Payne p. 38; Loomis p. 46",
     });
   }
@@ -198,6 +201,53 @@ export function hierarchy(texts: TextBox[]): Finding[] {
 /** How a finding names a text: OCR's reading is a guess, so it says where the words were found. */
 function what(t: TextBox): string {
   return t.source === "ocr" ? `Lettering in the picture (read as "${short(t.text)}")` : `"${short(t.text)}"`;
+}
+
+/**
+ * Text size at the size people will see it: a picture for social posts and the web is mostly seen
+ * on a phone, about 360 px wide. Under 9 px there it can't be read; under 13 px it strains.
+ */
+function phoneSize(r: Picture, texts: TextBox[]): Finding[] {
+  const atPhone = (t: TextBox) => (t.size * PHONE_WIDTH) / r.width;
+  const unreadable = texts.filter((t) => atPhone(t) < 9), small = texts.filter((t) => atPhone(t) >= 9 && atPhone(t) < 13);
+  const list = (ts: TextBox[]) => ts.map((t) => `${what(t)} (${Math.round(atPhone(t))} px)`).join(", ");
+  const out: Finding[] = [];
+  if (unreadable.length) {
+    out.push({
+      rule: "text-too-small",
+      kind: "error",
+      message: `Too small to read on a phone, where this picture shows about ${PHONE_WIDTH} px wide: ${list(unreadable)}. Make it at least ${Math.ceil((13 * r.width) / PHONE_WIDTH)} px tall here.`,
+      source: "Attentry Design rules R1; phones show posts about 360 px wide",
+    });
+  }
+  if (small.length) {
+    out.push({
+      rule: "text-small",
+      kind: "default",
+      message: `Small on a phone (about ${PHONE_WIDTH} px wide): ${list(small)}. ${Math.ceil((13 * r.width) / PHONE_WIDTH)} px or more here reads easily.`,
+      source: "Attentry Design rules R1; phones show posts about 360 px wide",
+    });
+  }
+  return out;
+}
+
+/**
+ * Lettering drawn as shapes, whose words we know from data-text: can a reader read it? OCR reads
+ * each line; when it gets the words wrong, the letter shapes are probably ambiguous to people too.
+ * A suggestion, never an error: OCR also misreads lettering people read fine.
+ */
+async function legibility(r: Rendered): Promise<Finding[]> {
+  const misread: string[] = [];
+  for (const t of r.texts.filter((t) => t.source === "drawn")) {
+    const read = await readBack(r.png, r.width, r.height, t);
+    if (similarity(t.text, read) < READABLE) misread.push(`"${short(t.text)}" as "${short(read || "nothing")}"`);
+  }
+  if (!misread.length) return [];
+  return [{
+    rule: "hard-to-read",
+    kind: "default",
+    message: `A text reader misread ${misread.join(", ")}. The letter shapes may be ambiguous to people too: try a plainer font, more space between letters, or a bigger size.`,
+  }];
 }
 
 export function short(s: string): string {

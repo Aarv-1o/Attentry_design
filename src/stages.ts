@@ -68,8 +68,14 @@ async function lockOf(project: string, rendered: Rendered, name: string, style?:
 export async function runCheck(project: string, file: string, lockName?: string, size: RenderOptions = {}): Promise<StageResult> {
   const rendered = await render(inProject(project, file), size);
   const lock = lockName ? await readLock(project, lockName) : undefined;
-  return report(shown(project, rendered.file), await check(rendered, await measure(rendered.png), lock));
+  const r = report(shown(project, rendered.file), await check(rendered, await measure(rendered.png), lock));
+  return { ...r, text: `${r.text}
+${LOOK}` };
 }
+
+// What no measurement can judge: meaning. Said after every check, so "no findings" isn't taken as
+// "done".
+const LOOK = "Now look at the render yourself: does each part say its message to someone who doesn't already know it, and can every word be read at phone size? Fix what doesn't; in the design card, name any part that may still not get its message across.";
 
 function report(what: string, findings: Finding[]): StageResult {
   const errors = findings.filter((f) => f.kind === "error").length;
