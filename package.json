@@ -1,0 +1,20 @@
+{
+  "name": "attentry-design",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio experiments/direction/index.ts",
+    "render": "remotion render experiments/direction/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.539",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
