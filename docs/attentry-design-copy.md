@@ -98,17 +98,33 @@ flag, and suggestions rather than verdicts.
 | **Triads, repeated** | more than one list of exactly three adjectives or phrases in a short piece | looks thorough, says little |
 | **Vague attribution** | "experts say", "studies show", "industry reports" with no source nearby | unsupported authority |
 | **Formula ending** | a last paragraph opening with "In conclusion", "Overall", "Despite these challenges", "Ultimately" | template shape |
-| **Uniform rhythm** | low variance of sentence length across a paragraph (all 12–18 words) | PR Daily: sameness; real writing varies |
+| **Uniform rhythm** | low variance of sentence length across a paragraph (all 12–18 words, all over 30 or all under 15), or the same sentence structure repeated | PR Daily; Williams, Lesson 9; Klinkenborg eb 77; Strunk Rule 14 |
 | **No specifics** | a paragraph with no number, name, place, date or concrete noun | the root cause: generic copy has nothing only this product could say |
 | **Formatting tells** | Title Case headings, emoji-led bullets, bold mid-sentence, "Term: definition" lists in prose copy | Wikipedia's style signs |
 | **Chat residue / placeholders** | "I hope this helps", "[insert …]", "XX-XX", "example.com", "Lorem" | unambiguous, always worth fixing |
+| **Swap test** | a sentence with no product-specific noun, number or name, which would stay true with a competitor's name in it | Handley, Rule 42 |
+| **Nominalizations** | Williams's five patterns: a -tion/-ment/-ence/-ity noun with an empty verb (be, have, make, conduct, give, perform), chains joined by "of", after "there is" | Williams, Lesson 3; Reinhart: 1.5–2× |
+| **Noun stacks** | three or more nouns in a row | Zinsser pp. 76–77 |
+| **Unsupported superlatives** | "the best", "world-class", "revolutionary" with no figure or source nearby | Hopkins pp. 23–24; Zinsser p. 78 |
+| **Counterfeit social proof, authority, scarcity** | crowd claims with no number or source; "experts recommend", "award-winning" with no name; "limited time", "only N left" | Cialdini ch. 4, 6, 7 |
+| **Fluff shapes** | most claims in the future ("will transform") or hypothetical ("can help", "could save"), none in the present | Fitzpatrick, eb 29 |
+| **Connective tics** | density of sentence-initial "Moreover,", "Additionally,", "Furthermore,", "Indeed," | Klinkenborg eb 96–97 |
+| **Metadiscourse** | announced topics ("In this post, we'll explore"), attributed observations ("It is worth noting that") | Williams, Lesson 7 |
+| **Redundancy and wordy phrases** | doubled words, redundant modifiers ("final outcome"), redundant categories ("pink in color"), "the fact that", "in order to" | Williams Lesson 7; Strunk Rule 13; Zinsser |
+| **"We" over "you"** | ratio of we/our to you/your on a product page | Handley, Rule 12 |
+| **Running start** | an opening paragraph with no claim, number or name | Handley Rule 15; Zinsser p. 55 |
+| **Motto tagline** | a tagline that names no product, user or benefit, or runs past about 10 words | Krug pp. 103–105 |
+| **Moralizing openers** | sentences starting "Don't forget", "Always remember to", "Never" in tips copy | Handley, Rule 40 |
+| **Exclamation points, qualifiers** | more than one "!" in product copy; "a bit", "sort of", "quite", "pretty much" in density | Zinsser pp. 71–72 |
 
 Most useful first: chat residue and placeholders (unambiguous), puffery, no specifics, and the
 vocabulary cluster. Rhythm and triads need care to avoid flagging good writing.
 
 **Must not flag** (fixtures): a single "crucial" in a technical sentence; "not X but Y" used once
 to correct a real misconception; lists of three that are really three things; quoted text;
-technical terms that happen to be on a list ("robust" statistics, "landscape" photos).
+technical terms that happen to be on a list ("robust" statistics, "landscape" photos); the passive
+where it belongs (unknown actor, topic first: Williams, Lesson 4), since AI copy uses the
+agentless passive less than people do, not more.
 
 ## Direction before writing (what the agent hears)
 
@@ -128,6 +144,39 @@ Same idea as the direction cards: say what good copy needs before it's written, 
 - **Match the brand's own examples.** If the project has a voice guide or past copy (for
   Attentry: the go-to line and the tagline), reuse its words and rhythm.
 
+## What the books add (read 2026-11-24)
+
+Eleven books on writing, advertising, persuasion and customer research, read twice, with notes
+and page references in attentry-design-book-notes.md. In short:
+
+- **Every rule above was a craft fault before it was an AI tell.** Klinkenborg names "robust" and
+  "vibrant" as empty modifiers; Handley's buzzwords are fine "used sparingly" and "toxic" in
+  numbers, the same density idea as Wikipedia's list; Heath shows overuse emptying "unique"; Krug's
+  "happy talk" is self-praise without the facts. A finding can cite an editor, which keeps the
+  check honest about not being a detector.
+- **The root rule is specifics**, and the books say how to fix it, not just flag it. Hopkins's
+  before-and-after claims are the model: "more light" became "three and one-third times the
+  light"; "quick shaves" became "a 78-second shave". "Actual figures are not generally
+  discounted." Handley's swap test is the quickest check: would the sentence still be true of a
+  competitor?
+- **Honest persuasion versus its counterfeit** (Cialdini): social proof, authority and scarcity
+  work as mental shortcuts, which is why unsourced versions of them work too. The check flags the
+  counterfeit, never teaches the trick. Attentry's real download counts are the honest version
+  of social proof; "only a few left" for a free tool never is.
+- **Corrections:** don't flag the passive (above); "not X but Y" used once is legitimate (Strunk,
+  Rule 12); a section may open with a point sentence (Williams) as long as it carries content and
+  doesn't only announce (Klinkenborg).
+
+**Direction additions** (with the list above):
+
+- **Replace each adjective with the measurement behind it** (Hopkins). If there is none, cut the
+  claim.
+- **Name the reader and write to "you"** (Handley, Hopkins): what they get, not what we offer.
+- **Present facts, not promises** (Fitzpatrick): what the product does now, what users did.
+- **Read it aloud, or write it as a letter to a friend** (Klinkenborg).
+- **One point per piece, chosen before writing** (Zinsser, Heath).
+- **Revise toward** brevity, directness, simplicity, clarity and rhythm (Klinkenborg).
+
 ## Limits
 
 - **Not a detector, and must never say "this was written by AI".** It flags patterns; humans
@@ -141,6 +190,9 @@ Same idea as the direction cards: say what good copy needs before it's written, 
   copy persuades. Same limit as the video rules (Murch: emotion and story can't be measured).
 
 ## Sources
+
+- Books: see attentry-design-book-notes.md (Williams, Klinkenborg, Heath, Handley, Zinsser,
+  Strunk, Lamott, Hopkins, Cialdini, Krug, Fitzpatrick).
 
 - Wikipedia, "Signs of AI writing" (WikiProject AI Cleanup): https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing
 - Coverage: TechCrunch, https://techcrunch.com/2025/11/20/the-best-guide-to-spotting-ai-writing-comes-from-wikipedia/ ; The Decoder, https://the-decoder.com/heres-how-to-spot-ai-writing-according-to-wikipedia-editors/

@@ -1,7 +1,7 @@
 # Attentry Design: notes from the books
 
-What each book gives that a rule could measure, with page references. Short quotes only. Local,
-like the other design docs. Started 2026-11-19.
+What each book gives that a rule could measure, with page references. Short quotes only, and no
+book text beyond them. Started 2026-11-19; copy and illustration books added 2026-11-24.
 
 Legend: **Rule idea** = could become a check. **Context** = shapes how a rule is worded or scoped,
 but isn't a check itself.
@@ -724,3 +724,936 @@ scans: read through OCR, with the diagram pages looked at directly.
    direction (what to ask for), not something a frame check can confirm. The rule ideas above are
    the measurable part; everything else belongs in the cards, given at request time and checked by
    eye after the render, as the 2026-11-19 test showed.
+
+---
+
+## Copy books (read 2026-11-24, two passes)
+
+Legend as above. **Rule idea** = a check on the copy; **Direction** = what the agent hears before
+writing; **Context** = scopes a rule. Page numbers are printed pages where the edition has them;
+"eb" = page in an ebook as extracted (ebooks have no printed pages); "pdf" = page in a PDF with
+no printed numbers. Every quotation was checked word for word against the book text (pass 2);
+my own example phrases are in *italics*, not quote marks.
+
+## Joseph M. Williams, *Style: Lessons in Clarity and Grace* (9th ed.)
+
+(This PDF has no printed page numbers; cited by lesson and PDF page.)
+
+- **Characters as subjects, actions as verbs** (Lesson 3–4, pdf 40–59): "the first principle of a
+  clear style is this: Make the subjects of most of your verbs short, specific, and concrete—the
+  main characters in your story." Readers judge prose clear when characters are subjects and
+  their actions are verbs; indirect when actions hide in nominalizations and characters vanish
+  ("There was fear that there would be a recommendation for a budget reduction. Who fears? Who
+  recommends?"). **Rule idea:** the core of the copy rules. Reinhart et al. found instruction-tuned
+  LLMs use nominalizations 1.5–2× the human rate; Williams is the cure.
+- **Five nominalization patterns, each with a fix** (Lesson 3, pdf ~46–48): (1) a nominalization
+  as the subject of an empty verb ("The intention of the committee is to audit…"); (2) one
+  nominalization as subject of an empty verb and another after it ("Our loss in sales was a result
+  of their expansion of outlets"); (3) after an empty verb ("The agency conducted an
+  investigation"); (4) two or three in a row joined by prepositions ("a review of the evolution
+  of the brain"); (5) after "there is/there are" ("There is no need for our further study").
+  Fix: make the action a verb and name who does it. **Rule idea:** these five are detectable with
+  a parser and a -tion/-ment/-ence/-ity list plus empty verbs (be, have, make, conduct, give,
+  perform). Must not flag useful nominalizations (Williams lists them: a short subject referring
+  back to the last sentence, a common concept like "freedom", what would otherwise need "the fact
+  that").
+- **Diagnose, analyze, rewrite** (Lesson 3, pdf ~45): find the characters, find their actions,
+  check that characters are subjects and actions are verbs. **Direction:** the editing order.
+- **The passive has uses** (Lesson 4, pdf 67): when the actor is unknown or unimportant, to move
+  a long bundle of information to the end, or to keep focus on a character. **Context:** a
+  passive check must not flag these. (GPT-4o uses the agentless passive at half the human rate,
+  so AI copy isn't over-passive; the problem is nominalization and participles.)
+- **Old before new: cohesion** (Lesson 5, pdf 81–86): sentences flow when each begins with
+  something the reader already knows and ends with the new; readers expect the topic to be the
+  subject. **Direction.**
+- **Stress at the end** (Lesson 6, pdf 98): put long, complex and new information at the end;
+  begin with a short concrete subject and a specific verb. **Direction.**
+- **Concision, six rules** (Lesson 7, pdf ~112–120): delete words that mean little or nothing;
+  delete words that repeat others (doubled words: English writers long paired "a French or Latin word with a native English one, because foreign words sounded more learned"); delete words implied by others ("future
+  events", "past history", "final outcome", pdf 116); replace a phrase with a word; change
+  negatives to affirmatives; delete what readers can infer. Plus redundant categories, where a
+  word names its own category: "During that period of time, the membrane area became pink in
+  color and shiny in appearance" (pdf 117). **Rule idea:** doubled words, redundant modifiers
+  and categories, and wordy phrases are list-checkable.
+- **Metadiscourse: some, not much** (Lesson 7, pdf ~122–126): language about the writing itself.
+  Topic announcers ("In this essay, I will discuss the role of metaphor in style") and attributed
+  observations: "Don't announce that something has been observed, noticed, noted, and so on;
+  just state the fact". Hedges ("perhaps", "seems") and intensifiers ("very", "clearly",
+  "obviously") are both metadiscourse; "the risk is in using too many". **Rule idea:** announced
+  topics, attributed observations, stacked intensifiers. Matches Wikipedia's "it's important to
+  note" sign.
+- **Long sentences: shape, not pile-up** (Lesson 8, pdf 146–149): don't tack clause onto clause;
+  use resumptive, summative and free modifiers; in coordination go from shorter to longer.
+  **Context:** AI's ", highlighting X" tail is a free modifier misused to claim meaning, not to
+  extend a thought.
+- **Balance used prudently** (Lesson 9, pdf 169): balanced, parallel structures are the mark of
+  elegance, but "used to excess, these patterns can seem merely clever". **Context:** grounds
+  the "negative parallelism repeated" and "triads repeated" rules: the device is fine, the reflex
+  isn't.
+- **Sentence length** (Lesson 9, pdf 180): "Think about the length of your sentences only if they
+  are all longer than thirty words or so or shorter than fifteen." **Rule idea:** a threshold for
+  the uniform-rhythm rule: flag a paragraph whose sentences all fall in one narrow band, or all
+  over 30, or all under 15.
+- **Point sentences** (Lesson 10–11, pdf 205–211): open every section with a short segment ending
+  in a sentence that states its point and key concepts. **Direction** for longer copy (landing
+  pages, docs).
+- **The ethics of style** (Lesson 12, pdf ~215–245): "We write ethically when as a matter of
+  principle, we would trade places with our intended readers"; intended misdirection hides the
+  responsible agent (his Sears example: the company vanishes from sentences about mistakes and
+  reappears in sentences about good intentions). **Rule idea:** marketing copy that drops the
+  actor exactly where something went wrong. **Context:** for honesty checks, not style.
+
+## Verlyn Klinkenborg, *Several Short Sentences About Writing*
+
+(An ebook with no printed page numbers; "eb" = page in the ebook as extracted, 158 in all.)
+
+- **Volunteer sentences: the AI failure, described in 2012** (eb 41): "sentences often volunteer
+  a shape of their own And supply their own words as if they anticipated your thinking. Those
+  sentences are nearly always unacceptable, Dull and unvarying … only the most predictable
+  phrases, the inevitable clichés." A cliché is "the debris of someone else's thinking, Any group
+  of words that seem to cluster together 'naturally'". **Context:** this is what next-token
+  prediction produces by design: the phrase that clusters naturally. Grounds the vocabulary and
+  puffery rules, and the warning that synonyms don't fix it (eb 41: "You can't fix a cliché by
+  using it ironically").
+- **Know what each sentence says** (eb 9–10): "Know what each sentence says, What it doesn't say,
+  And what it implies. Of these, the hardest is knowing what each sentence actually says." Each
+  sentence "says the very thing it comes into existence to say. Then it leaves the stage … It
+  doesn't talk about what it's saying." **Direction.**
+- **Short sentences, for control** (eb 13–16): short sentences make each one examinable; long
+  ones are "pasted together with false syntax And rely on words like 'with' and 'as' … short on
+  verbs … Full of floating, unattached phrases". Remove words one by one: "Every word is optional
+  until it proves to be essential". **Context:** the "with" and dangling-phrase habit is the same
+  as Williams's tacked-on modifiers and AI's participle tails.
+- **Vary the structure, not only the words** (eb 77): "One way is by looking for sameness,
+  uniformity, and working against it. You wouldn't repeat the same words over and over again,
+  So why repeat so many sentence structures?" Only a string of choppy sentences sounds choppy;
+  rhythm comes from "two or three sentences working together" (eb 15). **Rule idea:** repeated
+  sentence openings and shapes (subject–verb–object all the way down; every sentence starting
+  with the subject; the same length band). Strengthens the uniform-rhythm rule with a second
+  measure: structural repetition.
+- **Logical indicators are tics** (eb 96–97): "In fact. Indeed. On the one hand. On the other
+  hand. Therefore. Moreover. However. … Thus. These are logical indicators. Emphasizers.
+  Intensifiers. They insist upon logic whether it exists or not." They "betray the writer's
+  anxiety" and "bolster the apparent authority of your piece By echoing the apparent authority
+  of other people". **Rule idea:** sentence-initial connectives in density ("Moreover,",
+  "Additionally,", "Furthermore,", "Indeed,"): matches Wikipedia's "Additionally" sign.
+- **Transitions and topic sentences are scaffolding** (eb 25–28): "No sentence can afford to be
+  merely transitional"; topic sentences only "announce the subject of the paragraph you're about
+  to read". **Context:** disagrees in part with Williams's point sentences (Lesson 10), who wants
+  a stated point up front. The agreement: no sentence that only announces; the point sentence
+  must carry content itself.
+- **Empty modifiers, named** (eb 142): of "noble mountains … Robust with pines … colorfully
+  vibrant in the warm months": "Can you feel the emptiness of the modifiers here—'noble,'
+  'robust,' 'colorfully vibrant'? And note that summarizing word, 'array.'" **Rule idea:** two of
+  the words on Wikipedia's AI list ("robust", "vibrant"), flagged by a writing teacher as empty
+  before chatbots existed. Supports the vocabulary rule as a craft rule, not an AI detector.
+- **Revision as becoming a stranger** (eb 45–52): read your work aloud (the eye can't hear rhythm);
+  put every sentence on its own line; circle nouns and verbs; ask "How many of the verbs are
+  variants of 'to be'", whether nouns are "Multisyllabic Latinate nouns ending in '-ion'", how close
+  each subject is to its verb. **Rule idea:** a sentence-per-line view in the report; "-ion" noun
+  density; subject–verb distance. **Direction:** the read-aloud test.
+- **Names of things** (eb 39–40): "It's your business to know the names of things"; prose taught
+  in school makes "inert verbs act abstractly upon faceless nouns" and uses "passive constructions,
+  which absolve everyone of responsibility". **Rule idea:** supports "no specifics": concrete,
+  named nouns versus abstractions.
+- **Authority comes from clarity, not borrowing** (eb 102–104, 112): "Authority arises only from
+  clarity of language and clarity of perception"; the "aping of authority" with "transition and
+  false logic" is the opposite. **Context:** for vague attribution ("experts say").
+- **Sincerity must be enacted** (eb 68): "If you want the reader to feel your sincerity, your
+  sentences have to enact sincerity—verbally, syntactically, even rhythmically." **Context:** why
+  copy that claims (*we're passionate about…*) reads as hollow.
+- **Write about what you noticed** (eb 34–37): people write "about pre-authorized subjects in
+  pre-authorized language"; noticing is the source of specifics. **Direction:** before copy, list
+  what's actually particular about this product.
+- **Metaphor, sparingly** (eb 40): "Like any rhetorical device, the less you use it, the more
+  effective it is." **Context:** the "use a device once" direction.
+- **Parallelisms and contrasts as traps** (eb 109): "You may be creating syntactical and logical
+  patterns that cast themselves forward Into future sentences and end up constricting you.
+  Parallelisms and contrasts, for instance. They seem to offer structure and guidance, but they're
+  tying your hands." **Rule idea:** the clearest craft basis for the repeated negative-parallelism
+  and triad rules: the pattern drives the sentences instead of the thought.
+- **Good prose sounds spoken** (eb 62–63): "It's always worth asking yourself if you can imagine
+  saying a sentence And adjusting it until you can"; rewrite stiff prose "as if it were A letter or
+  a long e-mail to a friend". **Direction:** the read-aloud and letter tests.
+- **Trust the reader** (eb 111–114): writing that distrusts the reader over-reasons "filling our
+  prose with approximations of logic"; trusting the reader controls "The temptation to
+  over-narrate, over-describe, over-interpret, over-signify". **Rule idea:** over-signifying: the
+  participle tail and the "This shows/This highlights" sentence that explains what the reader
+  just read.
+- **What to revise toward** (eb 118–119): "revise toward brevity—remove words instead of adding
+  them. Toward directness—language that isn't evasive or periphrastic. Toward simplicity—in
+  construction and word choice. Toward clarity—a constant lookout for ambiguity. Toward rhythm"
+  … "Toward presence—the quiet authority of your prose." **Direction:** a compact editing brief
+  for the agent.
+
+## Chip Heath & Dan Heath, *Made to Stick*
+
+(Ebook; "eb" = page as extracted, 297 in all.)
+
+- **The Curse of Knowledge** (Intro, eb 25; Epilogue, eb 231–233): "Once we know something, we
+  find it hard to imagine what it was like not to know it." Experts answer "will people
+  understand / care?" with yes because they do. **Context:** why product copy from inside the
+  company (or from a model fed the company's docs) defaults to category words. "Accuracy to the
+  point of uselessness is a symptom of the Curse of Knowledge" (eb 58).
+- **Six traits, checkable as questions** (Intro and Epilogue): Simple, Unexpected, Concrete,
+  Credible, Emotional, Stories. The epilogue maps them to the reader's steps: pay attention →
+  Unexpected; understand and remember → Concrete; believe → Credible; care → Emotional; act →
+  Story (eb ~235). "Rather than guess about whether people will understand our ideas, we should
+  ask, 'Is it concrete?'" **Rule idea + Direction:** a SUCCESs pass on copy; Concrete and Credible
+  are the measurable ones.
+- **Simple = core + compact** (ch. 1, eb 48): find the single most important thing; say it
+  briefly. "Names, names, and names" (eb 45–47: a local paper's whole strategy) — highly concrete.
+  **Direction:** one core message per piece.
+- **Concrete beats abstract** (ch. 3, eb 101–107): "Concrete language helps people, especially
+  novices, understand new concepts. Abstraction is the luxury of the expert." Memory is Velcro:
+  concrete details have more hooks. Over generations "the more memorable concrete details
+  survived and the abstractions evaporated" (eb 104). **Rule idea:** the "no specifics" rule's
+  research base: abstract-noun density, no sensory or named details.
+- **Credibility from inside the message** (ch. 4): vivid, specific details make claims believable
+  (eb 130s); statistics made human-scale (eb 137: "contextualize them in terms that are more
+  human, more everyday"); the Sinatra Test, "one example alone is enough to establish credibility"
+  (eb 145); testable credentials, "asking customers to test a claim for themselves" (eb 150).
+  **Direction:** for a product page: one strong example, numbers in human terms, a claim the
+  reader can check. **Context:** the opposite of "experts agree" and *industry-leading*.
+- **Semantic stretch** (ch. 5, eb 164–166): words lose force by overuse; researchers tracked
+  "unique" (which "used to mean one of a kind") across the top fifty U.S. newspapers over twenty
+  years: it rose while "unusual" fell; "In 1985, articles were more than twice as likely to use the
+  word 'unusual' as the word 'unique.' By 2005, the two words were about equally likely to be
+  used." Yet "Unique things should be a subset of unusual things". **Context:** the same mechanism as AI's favorite words ("crucial",
+  "pivotal", "robust"): overuse empties them. Supports the vocabulary rule on craft grounds.
+- **WIIFY, what's in it for you** (ch. 5, eb 171): spell out the reader's benefit plainly.
+  Avoid "Maslow's basement" (eb 174): don't assume people only care about money and security.
+  **Direction.**
+- **Surprise, not gimmicks** (ch. 2, eb 69–83): surprise must be "postdictable" (makes sense
+  afterwards); gimmicky surprise is a trap. Curiosity "happens when we feel a gap in our
+  knowledge" (Loewenstein, eb 83). **Direction:** a hook that opens a real gap, not a stunt.
+- **Stories as flight simulators** (ch. 6): stories show how to act; challenge, connection and
+  creativity plots. **Context.**
+
+## Ann Handley, *Everybody Writes*
+
+(Ebook; "eb" = page as extracted, 327 in all. Rules are numbered in the book; both are given.)
+
+- **The swap test** (Rule 42, eb 134): copy from real home pages and press releases ("a
+  full-service … practice whose objective is to provide timely and accurate professional
+  services"; "leveraging a variety of data sources and advanced analytic approaches") fails
+  because "they could be describing a hundred different companies, rather than one unique
+  company. … Don't tell me who you are—tell me why you matter to me." **Rule idea:** the clearest
+  definition of generic copy: a sentence still true if the product's name is swapped for a
+  competitor's. Approximated by sentences with no product-specific noun, number or name.
+- **Real words, not buzzwords** (Rule 29, eb ~100): "revolutionary, value-added, impactful,
+  cutting-edge, best-of-breed … leverage and incentivize and synergize". Buzzwords are "the
+  chemical additives of business writing … one or two used sparingly don't much matter. But use
+  too many of them and they become toxic." **Rule idea:** a buzzword list with a density
+  threshold, the same shape as Wikipedia's AI-word rule.
+- **Frankenwords and fake verbs** (Rule 30): coinages ("amazeballs", "solopreneur"), "-ize/-ism"
+  additives, nouns as verbs ("leverage", "incentivize", "bucketize") and verbs as nouns
+  ("learnings"). **Rule idea:** a list ("leverage" is on Wikipedia's newest AI list too).
+- **Weblish** (Rule 31): "bandwidth", "ping", "radar screen", "execute on", words that "sound as
+  if they were being uttered by a robot". **Rule idea:** list.
+- **Weak verbs and adverbs** (Rules 33–34, eb ~102–106): swap the weak verb plus adverb for a
+  strong verb ("production increased quickly" → "production surged"); keep an adverb only when it
+  changes the meaning. Active over passive ("Active sounds zippier"). **Rule idea:** "-ly"
+  adverb + weak verb pairs; intensifier adverbs ("very", "really", "extremely").
+- **Clichés, once in a blue moon** (Rule 35): business platitudes ("move the needle", "at the end
+  of the day", "where the rubber meets the road", "take a 30,000-foot view") and clichéd concepts
+  ("Content is king", "___ is the new black", "___ is dead"). Allowed sparingly as shorthand.
+  Orwell: "Never use a metaphor, simile, or other figure of speech which you are used to seeing in
+  print." **Rule idea:** a cliché list, flagged once each.
+- **Mistakes marketers make** (Rule 36): unparallel "Not only … but also"; companies that "saw"
+  growth; "in terms of" ("chances are you're not thinking clearly"); "this/that" with an unclear
+  antecedent at the start of a sentence. **Rule idea:** each is a pattern.
+- **Running starts** (Rule 15, eb 65): "At the beginning of a piece, many of us take too long to
+  delve into the topic … a metaphorical running start". **Rule idea:** an opening paragraph with
+  no claim, number or name (preamble). **Direction:** start where the point starts.
+- **The editing checklist** (Rule 13, "Cross out the wrong words"): by chainsaw (state the key
+  idea near the start; slash what doesn't support it; "Make every paragraph earn its keep";
+  "Make every sentence earn its keep … Or does it simply restate what its buddy before it already
+  said? If so, kill it") then by surgical tools (trim bloat: "although" for "despite the fact
+  that", "about" for "in regard to"; shed the obvious: "in this article", "I've always felt
+  that"). **Rule idea:** restating sentences (high overlap with the previous sentence) and
+  wordy-phrase swaps.
+- **Customer-centric point of view** (Rule 12, eb 59): replace "we" with "you": "Company-centric:
+  We offer accelerated application development. Customer-centric: Deploy an app to the cloud at
+  lunch hour." **Rule idea:** ratio of "we/our" to "you/your" on product pages.
+- **Show, don't tell** (Rule 18, eb 79): Chekhov's "Show me the glint of moon on broken glass."
+  **Direction.**
+- **Voice is a differentiator** (Rule 43, eb 136): "your brand voice is simply an expression of
+  your company's personality and point of view". **Direction:** reuse the project's voice guide
+  and past copy.
+- **Truth** (Rule 46, eb 151): brand content must be "scrupulously trustworthy … the full truth,
+  with fairness, integrity, and accountability". **Context.**
+- **Landing pages and headlines** (Rules 68–69, eb 229–233): "A landing page should offer
+  visitors a hyperfocused experience … a clear path to follow"; headlines benefit-driven, not
+  product-driven: in a MarketingProfs test, "Create Successful Social Media Campaigns Fast with
+  SmartTools" against "Join today and get access to SmartTools". **Direction.**
+- **Important words first** (Rule 5, eb 36): "We tend to junk up the beginning of our sentences
+  with modifiers and qualifiers"; begin with the actor and the action. **Rule idea:** long
+  sentence openers before the subject (stacked introductory phrases), with Williams Lesson 6.
+- **Lede and kicker** (Rule 17, eb 69): "A good lede invites you to the party and a good kicker
+  makes you wish you could stay longer." **Direction:** with Zinsser's lead; the opposite of the
+  formula ending ("In conclusion").
+- **Limit moralizing** (Rule 40, eb 127): sentences opening "Don't forget…", "Never…", "Avoid…",
+  "Remember to…", "Always remember to…" read as condescending. **Rule idea:** moralizing openers
+  in marketing copy (common in AI-written tips posts).
+- **Ground content in data** (Rule 59, eb 180): "Data puts your content in context and gives you
+  credibility." **Direction:** with Hopkins: a number beats an adjective.
+- **Twitter is dialogue, LinkedIn is helping** (Rules 61, 65, eb 187, 214): tweets "work best as a
+  dialogue"; "write every tweet as you would speak it"; LinkedIn: "Always Be Helping". Her lengths
+  date from 2014 (tweets of 120–130 characters under the old 140 limit), so they're context only.
+  **Direction** for posts.
+
+## William Zinsser, *On Writing Well*
+
+- **Clutter** (ch. 2–3, pp. 7–16): "Clutter is the disease of American writing … unnecessary
+  words, circular constructions, pompous frills and meaningless jargon." "The secret of good
+  writing is to strip every sentence to its cleanest components. Every word that serves no
+  function, every long word that could be a short word, every adverb that carries the same meaning
+  that's already in the verb, every passive construction that leaves the reader unsure of who is
+  doing what." His bracket examples: the unnecessary preposition ("order up"), the adverb repeating
+  the verb ("smile happily"), the adjective stating a known fact ("tall skyscraper"), little
+  qualifiers ("a bit", "sort of"), empty phrases ("in a sense"). **Rule idea:** redundant
+  adverb–verb and adjective–noun pairs; empty phrases.
+- **Fad words** (p. 16): "Beware of all the slippery new fad words: paradigm and parameter,
+  prioritize and potentialize. They are all weeds that will smother what you write." **Rule
+  idea:** "prioritize" is on Wikipedia's mid-2026 AI list: the list rule again has a craft basis.
+- **Journalese** (ch. 6 "Words", p. 33): "a mixture of cheap words, made-up words and clichés
+  that have become so pervasive that a writer can hardly help using them. You must fight these
+  phrases or you'll sound like every hack." **Context:** the pre-AI name for "sounds like everyone
+  else".
+- **The 30-second reader** (p. 9): "The reader is someone with an attention span of about 30
+  seconds." **Context.**
+- **Be yourself** (ch. 5 "Style", p. 20): "a fundamental rule is: be yourself. No rule, however,
+  is harder to follow." Good writing has "humanity and warmth" (p. 5). **Direction:** first
+  person and the writer's own view where the brand allows it.
+- **The lead** (ch. 9, p. 55): "The most important sentence in any article is the first one. If
+  it doesn't induce the reader to proceed to the second sentence, your article is dead."
+  **Direction + Rule idea:** the opening sentence carries a claim or a concrete detail.
+- **Verbs** (Bits & Pieces, p. 69): "Verbs are the most important of all your tools … Active
+  verbs push hard; passive verbs tug fitfully." "Most adverbs are unnecessary … Don't tell us that
+  the radio blared loudly." **Rule idea:** redundant adverbs.
+- **Little qualifiers** (p. 71): "Prune out the small words that qualify how you feel and how
+  you think and what you saw: 'a bit,' 'a little'" (and "sort of", "rather", "quite", "pretty
+  much"). **Rule idea:** qualifier density.
+- **The exclamation point** (p. 72): "It has a gushy aura … Instead, construct your sentence so
+  that the order of the words will put the emphasis where you want it." **Rule idea:** more than
+  one "!" in a piece of product copy.
+- **Concept nouns and creeping nounism** (pp. 76–77): "Nouns that express a concept are commonly
+  used in bad writing instead of verbs that tell what somebody did"; noun chains such as
+  "Communication facilitation skills development intervention"; "Nobody goes broke now; we have
+  money problem areas." **Rule idea:** noun stacks of three or more (with Williams's
+  nominalizations).
+- **Overstatement and credibility** (p. 78): don't inflate; "If the reader catches you in just
+  one bogus statement that you are trying to pass off as true, everything you write thereafter
+  will be suspect." **Rule idea:** superlatives without support ("the best", "revolutionary",
+  "world-class") in product copy.
+- **Business writing** (ch. 16, p. 166): "humanity and clear thinking are a big part of the
+  solution"; "Hold the hype" (p. 184). **Context.**
+- **Unity and one point** (ch. 8, pp. 50–53): "Unity is the anchor of good writing"; keep one
+  pronoun, tense and mood; "decide what single point you want to leave in the reader's mind. It
+  will … affect your decision about tone and attitude." **Direction:** with Heath's core message:
+  one point per piece, chosen before writing.
+
+## William Strunk Jr., *The Elements of Style* (the 1918 text, in a 2011 edition)
+
+(Strunk's original, without White's later "An Approach to Style"; cited by rule number.)
+
+- **Rule 11, active voice**: "The habitual use of the active voice … makes for forcible writing";
+  replace "some such perfunctory expression as there is" ("There were a great number of dead
+  leaves lying on the ground" → "Dead leaves covered the ground"). And the nominalized passive:
+  "A survey of this region was made in 1900" → "This region was surveyed in 1900". The passive is
+  still right when it puts the topic first. **Rule idea:** *There is/there are … -ing* openers;
+  *a [noun] of X was made/carried out*.
+- **Rule 12, positive form**: "Make definite assertions. Avoid tame, colorless, hesitating,
+  non-committal language. Use the word not as a means of denial or in antithesis, never as a means
+  of evasion." "the reader is dissatisfied with being told only what is not; he wishes to be told
+  what is." But "The antithesis of negative and positive is strong: Not charity, but simple
+  justice." **Context:** "not X but Y" is a real device; the AI fault is using it as a reflex on
+  claims nobody made (Wikipedia's negative parallelism).
+- **Rule 13, omit needless words**: "A sentence should contain no unnecessary words, a paragraph
+  no unnecessary sentences … not that the writer make all his sentences short … but that every
+  word tell." The phrase list: "the question as to whether" → whether; "he is a man who" → he;
+  "in a hasty manner" → hastily; "the fact that should be revised out of every sentence in which it
+  occurs" ("owing to the fact that" → because). **Rule idea:** the wordy-phrase list (with
+  Williams and Handley).
+- **Rule 14, avoid a succession of loose sentences**: a paragraph of "two co-ordinate clauses, the
+  second introduced by a conjunction" is bad "because of the structure of its sentences, with their
+  mechanical symmetry and sing-song". Recast some as simple, periodic or three-clause sentences.
+  **Rule idea:** the uniform-rhythm rule in 1918 words: repeated sentence templates in a
+  paragraph.
+- **Rule 15, parallel form**, and **Rule 18, emphatic words at the end**. **Direction.**
+- **Words commonly misused** (ch. V): "Certainly … to intensify any and every statement. A
+  mannerism of this kind, bad in speech, is even worse in writing"; "Factor. A hackneyed word";
+  "Feature. Another hackneyed word; like factor it usually adds nothing" ("Better use the same
+  number of words to tell what Miss A. sang"); "Character", "Nature", "System", "Case": "often
+  simply redundant"; "Very. Use this word sparingly. Where emphasis is necessary, use words strong
+  in themselves." **Rule idea:** "features" (as in "boasts/features") is on Wikipedia's copula
+  list; Strunk's fix is the specifics rule: say what the thing is.
+
+## Anne Lamott, *Bird by Bird*
+
+(Ebook; "eb" = page as extracted, 166 in all. About process and fiction; it gives direction, not
+checks.)
+
+- **Good writing is telling the truth** (Getting Started, eb 21): "good writing is about telling
+  the truth"; and "telling the truth in an interesting way turns out to be about as easy and
+  pleasurable as bathing a cat." **Context:** truth and interest together, not polish.
+- **Details** (eb 22): "Scratch around for details: what people ate, listened to, wore". **Direction:**
+  the specifics rule from a novelist: concrete, sensory, particular.
+- **Short assignments, the one-inch picture frame** (eb 29–30): "all I have to do is to write down
+  as much as I can see through a one-inch picture frame". **Direction:** one small concrete scene
+  or fact per section, not a survey; the opposite of AI's "comprehensive overview" shape.
+- **First drafts and perfectionism** (eb 24, 36): bad first drafts are how good writing starts;
+  "Perfectionism is the voice of the oppressor … perfectionism will ruin your writing, blocking inventiveness
+  and playfulness". **Context:** AI copy is the reverse failure: an instantly polished first draft
+  with nothing true in it. The work is in the revising and in finding what's true, not the polish.
+- **Looking around** (eb 78): "Writing is about learning to pay attention and to communicate what
+  is going on." **Direction:** with Klinkenborg's noticing: copy starts from what was observed
+  (in the product, in users), not from category language.
+- **Your own voice** (eb 137): possessions and polish are "just props … on loan"; what isn't on
+  loan is "the thing that is real and true: your own voice". Characters "should not all sound like
+  you" (eb 59). **Context:** voice comes from truth and point of view; a model's default voice is
+  everyone's average.
+
+## Claude C. Hopkins, *Scientific Advertising* (1923)
+
+(Printed page numbers are in the text.)
+
+- **Being specific** (ch. 7, pp. 23–24): "Platitudes and generalities roll off the human
+  understanding like water from a duck. They leave no impression whatever." "Best in the world"
+  and "Lowest price in existence" are "at best simply claiming the expected. But superlatives of
+  that sort are usually damaging. They suggest looseness of expression, a tendency to exaggerate,
+  a careless truth. They lead readers to discount all the statements that you make." "But a man
+  who makes a specific claim is either telling the truth or a lie … Actual figures are not
+  generally discounted." **Rule idea:** the strongest evidence-based grounding for both the
+  superlative rule and the specifics rule.
+- **His examples, each a before and after** (pp. 23–24): "more light" → "three and one-third
+  times the light"; "Our prices have been reduced" → "reduced 25 percent"; "Lowest prices in
+  America" (copied by every rival) → "Our net profit is 3 percent" (business up sharply the next
+  year); "Abundant lather" → "Softens the beard in one minute … The final result of testing and
+  comparing 130 formulas"; "Used the world over" → "Used by the peoples of 52 nations"; "quick
+  shaves" → "a 78-second shave". **Direction:** the model for every product claim: replace the
+  adjective with the measurement behind it.
+- **First to tell** (p. 24): every brewer said "Pure"; one described the process (filtered air,
+  bottles washed four times, water from 4,000 feet, 1,018 yeast experiments). "All claims were
+  such as any brewer might have made … But he was the first to tell the people about them."
+  **Direction:** ordinary facts, specifically told, beat category claims. For Attentry: what it
+  actually checks and how, not *powerful code analysis*.
+- **Fine writing is a disadvantage** (ch. 2, p. 8): "fine writing is a distinct disadvantage. So
+  is unique literary style. They take attention from the subject." **Context:** AI's polished,
+  ornamented style is the problem Hopkins describes: style that draws attention to itself.
+- **Don't boast, don't joke about money** (p. 10): "Don't try to be amusing. Money spending is a
+  serious matter. Don't boast, for all people resent it." **Context.**
+- **Offer service** (ch. 3, p. 11): "the people you address are selfish, as we all are. They care
+  nothing about your interests or profit. They seek service for themselves." **Direction:** with
+  Handley's "you, not we".
+- **Test, don't guess** (ch. 1, 15, p. 5): principles proved by keyed ads and traced returns.
+  **Context:** for Attentry Design, rules should come from evidence (the baseline, studies), not
+  taste.
+- **Tell the full story; don't attack rivals** (ch. 8, p. 26; ch. 18, p. 55). **Direction.**
+- **Individuality** (ch. 17, p. 53): "A person who desires to make an impression must stand out in
+  some way. Being eccentric, being abnormal is not distinction to covet. But doing admirable
+  things in a different way gives one a great advantage." **Context:** standing out by substance,
+  not by gimmick (with Heath's "postdictable" surprise).
+
+## Robert B. Cialdini, *Influence: The Psychology of Persuasion*
+
+(For copy, Cialdini matters as the line between honest persuasion and its counterfeit: Attentry
+Design should flag the counterfeits, never teach the tricks.)
+
+- **Click, whirr** (ch. 1, pp. 3–4): people often respond automatically to a trigger feature:
+  Langer's copier study (a request "because I'm in a rush" got 94% compliance); turquoise that
+  sold only after its price was doubled by mistake ("expensive = good"). **Context:** persuasion
+  works on shortcuts, which is why fake versions of the triggers work too, and why they're the
+  copy patterns worth checking.
+- **Social proof, and fake social proof** (ch. 4, pp. 88–89, 121): "we use information about how
+  others have behaved to help us determine proper conduct", most of all people like us. Canned
+  laughter works although it's "patently fraudulent": "the problem comes when we begin responding
+  to social proof in such a mindless and reflexive fashion that we can be fooled by partial or
+  fake evidence." **Rule idea:** vague, unverifiable social proof in copy (*thousands of happy
+  users*, *trusted by developers worldwide*, *loved by teams*) with no number, name or source.
+  Real counts (Attentry's actual download numbers) are the honest version.
+- **Authority, and its trappings** (ch. 6, pp. 166–174): titles, clothes and trappings stand in
+  for expertise, which con artists exploit. The defense is two questions: "Is this authority truly
+  an expert?" (credentials, and their relevance to the topic) and "How truthful can we expect the
+  expert to be here?" **Rule idea:** *experts recommend*, *industry-leading*, *award-winning*,
+  *backed by research* with no named expert, award or study (the same as Wikipedia's vague
+  attribution sign, now with the psychology of why it works and why it's dishonest).
+- **Scarcity tactics** (ch. 7, pp. 180–182): the limited-number tactic (*only a few left*) and
+  deadlines ("Exclusive, limited engagement", "right now"). **Rule idea:** urgency and scarcity
+  language (*limited time*, *only N left*, *act now*) in copy for something that isn't scarce:
+  for a free, open-source tool it's always counterfeit.
+- **Commitment, reciprocation, liking** (ch. 2, 3, 5): testimonial contests get people to go on
+  record (p. 61); gifts create obligation. **Context:** mostly sales tactics, out of scope for
+  copy checks.
+- **How to say no** (each chapter's end): the defenses are about spotting counterfeit triggers,
+  e.g. telling honest favors from exploitation (p. 38). **Context:** frames the rules above as
+  protecting the reader, which is also what keeps trust (the disclosure studies).
+
+## Steve Krug, *Don't Make Me Think* (2nd ed.)
+
+(Printed page numbers are in the text in brackets.)
+
+- **Happy talk must die** (ch. 5, p. 46): "the introductory text that's supposed to welcome us to
+  the site and tell us how great it is … one sure-fire test: If you listen very closely while
+  you're reading it, you can actually hear a tiny voice in the back of your head saying, 'Blah
+  blah blah blah blah.'" "Unlike good promotional copy, it conveys no useful information, and it
+  focuses on saying how great we are, as opposed to delineating what makes us great." **Rule
+  idea:** the clearest definition of puffery on a page: self-praise without the facts behind it.
+- **Krug's Third Law** (ch. 5, p. 45): "Get rid of half the words on each page, then get rid of
+  half of what's left." **Direction** (for page copy).
+- **Instructions must die** (p. 47): no one reads them; make things self-explanatory instead.
+  **Context** for UI text.
+- **Self-evident** (ch. 1, p. 11): a page should be so clear that a neighbor "could look at your
+  site's Home page and say, 'Oh, it's a _____.'" **Rule idea + Direction:** the home page must say
+  what the thing is; Miller's 5-second test (in the earlier notes) is the same idea.
+- **Names that make you think** (ch. 1): "cute or clever names, marketing-induced names,
+  company-specific names, and unfamiliar technical names". **Rule idea:** invented feature names
+  in navigation and headings.
+- **Taglines** (ch. 7, pp. 103–105): "Good taglines are clear and informative. Bad taglines are
+  vague." "Six to eight words seem to be long enough"; "Good taglines convey differentiation and a
+  clear benefit. Bad taglines sound generic." "Don't confuse a tagline with a motto" ("We bring
+  good things to life"): "Mottoes are lofty and reassuring, but if I don't know what the thing is,
+  a motto isn't going to tell me." Clever only "if the cleverness helps convey—not obscure—the
+  benefit". **Rule idea:** a tagline that names no product, user or benefit (a motto); length
+  outside about 4–10 words. Attentry's own ("Your AI writes the code. Attentry checks it, without
+  AI.") passes: it says what it is, for whom, and how it differs.
+- **The welcome blurb** (p. 102): "a terse description of the site … visible without scrolling".
+  **Direction.**
+
+## Rob Fitzpatrick, *The Mom Test*
+
+(Ebook; "eb" = page as extracted, 124 in all. About customer interviews; it matters for copy in
+two ways: where real customer words come from, and its taxonomy of empty statements.)
+
+- **The Mom Test** (eb 13): "1. Talk about their life instead of your idea 2. Ask about specifics
+  in the past instead of generics or opinions about the future 3. Talk less and listen more."
+  **Direction:** the source of honest copy is what users actually did and said, gathered this way
+  (with Handley's "spend time with your customers").
+- **Fluff comes in three shapes** (eb 29): "Generic claims ('I usually', 'I always', 'I never');
+  Future-tense promises ('I would', 'I will'); Hypothetical maybes ('I might', 'I could')".
+  **Rule idea:** the same three shapes in product copy: generic claims (*always fast*, *never
+  breaks*), future promises (*will transform your workflow*), hypotheticals (*can help you*,
+  *could save hours*). Flag copy where most claims are future or hypothetical and none are
+  present facts.
+- **Compliments are fool's gold** (eb 29): "shiny, distracting, and entirely worthless"; "There's
+  more reliable information in a 'meh' than a 'Wow!'" (eb 45). **Context:** testimonials that are
+  pure praise (*Amazing tool!*) carry less than a specific one (*caught a missing auth check on my
+  second day*).
+- **Opinions and the future** (eb 16): "Opinions are worthless"; "Anything involving the future is
+  an over-optimistic lie." **Context** for the future-promise rule.
+- **Segments are who–where pairs** (eb 100): if problems aren't consistent, the segment isn't
+  specific enough. **Direction:** copy for a specific reader (Attentry: people building with
+  Claude Code or Codex) beats copy for "developers".
+
+---
+
+## Illustration books (read 2026-11-24, two passes)
+
+For attentry-design-illustration.md. Same legend: **Rule idea**, **Direction**, **Context**.
+
+## Molly Bang, *Picture This: How Pictures Work*
+
+(Ebook; "eb" = page as extracted, 42 in all. Twelve numbered principles, each derived from how we
+react to the physical world.)
+
+- **Shape orientation** (principles 1–3, eb 18–19): "Smooth, flat, horizontal shapes give us a
+  sense of stability and calm"; "Vertical shapes are more exciting and more active"; "Diagonal
+  shapes are dynamic because they imply motion or tension." Parallel, same-size shapes in motion
+  were "quite boring and heavy" until she varied their size (eb 20). **Direction:** pick the
+  dominant orientation for the feeling wanted. **Rule idea:** dominant line orientation measurable
+  from edges; flag an "energetic" scene built only of horizontals and verticals.
+- **Top and bottom** (principle 4, eb 20): "The upper half of a picture is a place of freedom,
+  happiness, and power"; low placement reads as threatened or sad. **Direction.**
+- **The center traps the eye** (principle 5, eb 22–23): "The center of the page is the most
+  effective 'center of attention' … it is difficult to take our eyes from the center". Moving the
+  focus off center makes "the picture … more dynamic". "Artists seldom place their figures in the
+  exact center of the page unless that figure is meant to be an object of meditation." The closer
+  something is to an edge or the center, the greater the tension. **Rule idea:** the centered-
+  subject rule (Goree measured AI art's default center) now has the designer's reason: dead
+  center means stillness, which is right for an icon and wrong for a scene.
+- **Light and dark backgrounds** (principle 6, eb 24): light feels safer, dark unknown and
+  threatening; "Bright and pale colors glow like jewels against dark backgrounds. Against white or
+  pale backgrounds, bright colors often look washed out." **Context:** for the AI-is-dark finding
+  (median brightness 50 against pros' 238): a dark default carries a mood whether intended or not.
+- **Points and curves** (principle 7, eb 25): "We feel more scared looking at pointed shapes; we
+  feel more secure or comforted looking at rounded shapes or curves." **Direction.**
+- **Size is strength** (principle 8, eb 25): "The larger an object is in a picture, the stronger
+  it feels." **Direction:** with Mateu-Mestre's big, medium, small.
+- **Color groups before shape** (principle 9, eb 26): "We associate the same or similar colors
+  much more strongly than we associate the same or similar shapes." Color symbolism "is based on a
+  false generalization. And it works—very, very well." **Rule idea:** an accent color shared by
+  unrelated elements creates a false link; the subject's color shouldn't repeat on background
+  clutter.
+- **Neither perfect order nor chaos** (principle 10, eb 27): "'perfect' regularity—continual,
+  relentless repetition—is perhaps even more horrifying in its monotony than randomness … It
+  implies a cold, unfeeling, mechanical quality … Such perfect order does not exist in nature."
+  "In a picture—as in any art form—true Order and true Chaos are anathema." **Rule idea:**
+  supports both the "too smooth / too perfect" rule (Goree) and the repeated-element rule
+  (Gilland): perfect symmetry and identical repeats read as mechanical.
+- **Contrast enables seeing** (principle 11, eb 27). **Context:** with the strongest-contrast-on-
+  the-subject rule.
+- **Space between shapes** (principle 12, eb 28): space isolates a figure, "both free and
+  vulnerable"; overlap joins shapes into one unit; depth comes from progressively smaller,
+  lighter shapes set higher, with gaps shrinking geometrically, not by a fixed amount. "Space
+  implies time." **Rule idea:** a crowded frame with no separating space (with Shaw's negative
+  space); depth faked with evenly spaced layers reads flat.
+- **Context and story override** (eb 21–22): each principle works in combination and is
+  "subservient to context and content". **Context:** these are tendencies, so any rule built on
+  them is a suggestion.
+
+## Edgar Payne, *Composition of Outdoor Painting* (1941; 7th ed.)
+
+- **Fifteen composition types** (ch. III, contents): the steelyard, the balance scale, the
+  O or circle, the S or compound curve, the pyramid or triangle, the cross, the radiating or
+  converging line, the ell, the suspended steelyard, the three spot, group mass, the diagonal, the
+  tunnel, the silhouette, the pattern. Most good pictures combine two or three (his captions
+  analyze each plate this way). **Direction:** name a composition type before drawing; the AI
+  default (subject center, thirds bands) is only one of fifteen, and not one Payne lists.
+- **The steelyard** (p. 36): the largest mass on one side, the second on the other, the third
+  near the fulcrum: unequal masses balanced, not centered. **Direction.**
+- **Avoid equal spacing; the center is a dead spot** (p. 38): guide lines are drawn "to prevent
+  equal spacing of the masses"; the center is "a place or a 'dead spot' around which all parts
+  revolve, through [sic] each part is located at various distances from the exact canvas center." Even
+  trees spaced evenly in nature should be adjusted (pp. 49–50: "alter shadows or other forms to
+  prevent equal spacing or monotonous repetition"). **Rule idea:** equal spacing of masses or
+  bands, and the subject at the exact center; Goree's "almost perfectly into thirds" is equal
+  spacing by another name.
+- **Horizon anywhere but the center** (p. 71): "the painter may place his horizon at almost any
+  place except the center"; with a clouded sky "the horizon should be low" (p. 35); for mountains,
+  their top near the upper edge and the horizon low (p. 49). **Rule idea:** a horizon line at the
+  vertical middle of the frame.
+- **Variety against monotony** (p. 104): "if masses are similar in size, color and values, have
+  too much sameness and monotony, the opposite of artistic quality will be the result. Variety and
+  contrasts are needed to balance evenness". **Rule idea:** masses of near-equal size and value
+  (with Bang's principle 10 and Mateu-Mestre's big, medium, small).
+- **A centered pyramid is too stable** (p. 115): "If a true pyramid is placed near the center of
+  the canvas and the forms are rather close-knit or solid, it is likely to have too much
+  stability." **Context:** the AI centered subject in another form.
+- **Light and sun direction shape the arrangement** (p. 30): with a low sun to the side, light
+  and dark split into equal areas and are harder to arrange; looking toward or partly away from
+  the sun gives better masses. **Direction.**
+- **The qualities a painting needs** (p. 7): "nobility in its concept, variety, rhythm,
+  repetition, unity, balance and harmony in its composition". Unity is the aim: "Creating
+  pictorial unity and creating a fine painting is one and the same thing" (foreword).
+  **Context.**
+
+## Andrew Loomis, *Creative Illustration* (1947)
+
+(Scanned; read from OCR. Pages are the printed folios. Seven parts: line, tone, color, telling the
+story, creating ideas, fields, experiment. Loomis worked from photographs and warns throughout
+against what copying them does; most of those warnings fit AI images better than photos.)
+
+- **One light, consistent** (p. 22): "All forms within your picture should appear to be lighted by
+  the same source and be lighted consistently with one another." Several sources make "the values
+  become a hodgepodge of middle tones, highlights, and accents". "It cannot be faked. … Faked
+  lighting breaks down every other good quality." And: "no area in the shadow can be as light as
+  the areas in the light." **Rule idea:** the strongest one for illustration. Shadow regions
+  brighter than lit regions, or highlights on opposite sides of neighbouring objects (with
+  Goree's inconsistent light).
+- **Design over subject** (p. 23): "The design makes the picture, not the subject or material."
+  "The best pictures run to a few simple values." **Context.**
+- **Hard edges all round stick to the page** (p. 23): "If the edge is kept hard all around, it
+  cannot avoid sticking to the picture plane, losing the feeling of space". The cut-out version
+  (p. 202): the subject "gets a 'pasted on' look"; "A 'scissors' type of edge has no place in
+  art." **Rule idea:** uniform edge sharpness along a subject's whole outline; the pasted-on
+  subject of AI composites.
+- **Variety of spaces** (p. 34): "About the only rule is that we give the greatest variety of
+  spaces possible, no two duplicating one another in size or shape"; "If two forms are equal, let
+  one overlap the other". "Variety is the spice of composition." **Rule idea:** same as Payne's
+  equal spacing: near-equal masses and gaps.
+- **His own subdivision** (pp. 36, 39): divide the frame with one line, "best to avoid placing the
+  line at a point which would be one-half, one-third, or one-fourth"; diagonals then give spaces
+  where no two are duplicates. **Context:** he avoids even the thirds, so a thirds check must not
+  reward thirds placement as good.
+- **One horizon, one eye level** (pp. 41–42): "No picture can have more than one horizon." The
+  fault shows "when the artist has obviously worked from two clippings or photos, each having a
+  different eye level"; the horizon "must so cut across all other figures". **Rule idea:**
+  vanishing lines that meet at different heights; figures on one floor whose heads cross the
+  horizon at different body heights. The composited AI image is exactly the two-clippings case.
+- **Eye level as a choice** (p. 45): "Too often ordinary pictures are ordinary because no thought
+  has been given to an eye level." **Context:** the AI default is the eye-level, straight-on view.
+- **Focal point** (p. 46, hand-lettered): never place the focal point exactly in the center;
+  every good picture should have a main focal point and all lines should draw the eye toward that
+  spot. Eye path (p. 47): the eye enters at the bottom and leaves at the top, never at the sides,
+  and lines leading out are stopped. **Rule idea:** centered focal point (with Bang principle 5
+  and Payne's dead spot).
+- **Bad composition list** (p. 51, hand-lettered "Bad composition brings negative response"): too
+  centered, straight-front pose, two things too alike and equal, pointing out of the picture, a
+  line splitting a head, a picture edge that coincides with a line in the picture, two eye paths.
+  **Rule idea:** several are measurable: subject centered, frame edge tangent to a strong line,
+  line through a head, two equal subjects.
+- **Line and feeling** (p. 50): horizontals for repose, verticals for dignity and strength,
+  obliques for combat and confusion, radiation for shock and attention. **Direction** (as Bang).
+- **Four tonal plans** (pp. 88–90): build in four values (white, light grey, dark grey, black),
+  one as the field and three against it. "More pictures are bad because no attempt at tone
+  organization has been made than for any other reason." A strewn room is littered "with contrasts
+  or confusion of tone"; "the simpler the presentation of a subject, the better it will be
+  pictorially." **Rule idea:** too many value clusters; contrast spread evenly with no dominant
+  tone (a value histogram check).
+- **Without a plan, every picture alike** (p. 91): "Without the tonal plan you will find yourself
+  falling into the bad habit of making most of your pictures alike". **Context:** the sameness
+  across a brand's AI images.
+- **Figure in the dead center** (p. 99): a figure "in the dead center of white space and filling
+  almost from top to bottom", background added after: "Naturally as a design it's going to be a
+  dud." "The creativeness is in the planning, pure and simple; the rest is good carpenter work."
+  **Context:** this is the AI hero image, described in 1947.
+- **Everything equally sharp** (pp. 100–101): "A round form can be so smoothed in gradation of
+  tone that it loses all character." "Definition will never be the basis of art, but rather
+  selection, accentuation, subordination." "Making all things through your picture equally
+  important is like playing all the notes of a composition with monotonous and equal intensity".
+  Detail far back flattens the picture: "To add detail we could not see is as false as to define
+  contours we cannot see"; "surface detail should become submerged in tone as it goes back."
+  **Rule idea:** detail and edge sharpness that do not fall off with depth or with distance from
+  the focal point (high-frequency energy spread evenly across the frame).
+- **Lost and found edges** (p. 102): a balance of sharpness and softness, "neither all hard or all
+  woolly". **Rule idea:** with the edge rule above.
+- **Smoothness is what marks a photo** (p. 108): "One of the main things that identify a photo as a
+  photo is the ultra-smoothness of the tones." Areas painted "too flat and smooth" look "tinny"; an
+  area "should always look painted, not pasted". **Rule idea:** Goree's too-smooth finding, from
+  a working illustrator. Low texture variance inside large regions.
+- **Mixing light into shadow makes mud** (pp. 152–153): "We cannot just rub the light and shadow
+  together and produce anything but dull color." "Keep your color most intense on the edges of
+  the lighted areas, where it merges into shadow." "No color in shadow can have brighter color
+  intensity than the same color would have in the light." **Rule idea:** shadow regions more
+  saturated than the lit side of the same object.
+- **Nature is grey** (p. 153): "Most of the visual color of nature, we find, is not pure color."
+  "Since nature is largely grey, don't be afraid of nature's greys." **Rule idea:** saturation
+  high across most of the frame.
+- **Restriction makes color** (pp. 154, 162–163): "It is natural to assume that the picture
+  containing the largest number of colors will be the brightest picture. Unfortunately, color does
+  not work out that way." "The most colorful and beautiful paintings often come from the
+  restriction of color, rather than the profuse application of it." "You cannot make a subject
+  colorful by using all pure color". And "It is values and tonal relationships that spoil more
+  color than anything else." **Context.**
+- **When the picture is dead in color** (p. 168): "When your picture is dead or unpleasant, the
+  fault is usually too much raw unrelated color, rather than not enough." Remedy: "See that all
+  three primaries do not appear in their raw state within the same picture." **Rule idea:**
+  saturated red, yellow and blue all present at full strength; too many hue clusters.
+- **Light should match the setting** (p. 170): outdoors, warm lights and cool shadows; indoors by
+  north light, the reverse. "A night subject with airy, light, and transparent shadows is most
+  unconvincing and false." **Rule idea:** a night scene with lifted shadows (low contrast in a dark
+  key).
+- **Bad color is out of place** (p. 174): "Color that is bad is usually only 'out of place.'"
+  "Anything becomes obnoxious when too completely dissociated from its environment." **Context.**
+- **Don't accept the first idea** (p. 179): "The first thing we think is likely to be just about
+  whatever everybody else would think of. To tell it differently, don't accept the obvious thing
+  immediately." **Context:** the generator's output is, by construction, the first thing
+  everybody would think of.
+- **Naturalness, not overacting** (p. 195): "Only naturalness can carry conviction". "Overacting
+  is worse than not enough. Agonizing over a trivial matter, or exploding with joy over a
+  toothpaste, is just not natural or in good taste". "Nothing falls so flat as an artificial
+  smile" (p. 200). **Rule idea:** exaggerated stock expressions; big smiles on every face.
+- **Who looks at the reader** (p. 195): "If the reader is not part of the dramatic action, never
+  let a character look directly at him." Direct gaze is for direct appeal only. **Rule idea:**
+  every figure looking into the camera in a scene that is not an appeal (a common AI stock pose).
+  Staging (p. 180): let figures do natural things, "anything but stiff-necked poses".
+- **Faking and imagination** (pp. 204–205): imagine freely, but "He should not attempt to fake the
+  effect of light on form." "The answer to faking lies clearly in the simple resolve not to guess
+  when you can find out." What matters is "the misstatements, things meant to be right that
+  through our ignorance are not." **Direction:** this separates style (free) from errors
+  (checkable): hands, text, perspective, light. It is the line between a style finding and an
+  error finding.
+- **The camera lies too** (p. 194): "There is distortion in the average photo which is not
+  obvious, but which, if followed too closely, gives that photographic look to your work."
+  **Context.**
+- **Tightness** (pp. 116, 120): "Tightness comes from small forms, too much precision, and everything
+  filled in to a sharply defined edge everywhere." Breaking smooth curves into flatter planes
+  "helps to eliminate the photographic look of painting." **Rule idea:** with the even-sharpness
+  rule.
+- **Hot skin looks cheap** (p. 293): "Almost any other thing can be too much, a sky too blue, grass
+  too green, a dress too yellow ... But not flesh." Commercial artists "have a common habit of
+  painting flesh on the 'hot' side"; "It makes much of the cheap-looking art work we see."
+  **Rule idea:** skin warmer and more saturated than the scene's light explains (the waxy, orange
+  AI skin), measured against the rest of the frame; never a judgment of skin color itself.
+- **A rut of similar treatment** (p. 272): "It is very easy to get into a rut with too much
+  similarity of treatment." **Context:** with the tonal-plan warning on p. 91.
+- **Trite subjects** (p. 273): "If the subject is trite or a bit hackneyed, there is always design,
+  spotting and color, types and accessories." "Originality is not dealing with facts alone, but
+  building things reasonable out of the facts." **Context.**
+
+## James Gurney, *Imaginative Realism: How to Paint What Doesn't Exist* (2009)
+
+(Scanned; read from OCR. Pages are the printed folios. Gurney is the one author here who writes
+about digital rendering and about eye-tracking data, so his book both supports and corrects the
+older composition rules.)
+
+- **Search results are other people's notions** (Introduction): images "on an Internet search ...
+  are just other peoples notions of what your scene should look like." **Context:** the
+  generator's output is the same thing at scale.
+- **Middle value mumbling** (p. 156): "Most paintings suffer from middle value mumbling, the
+  tendency to paint everything in the middle of the tonal range." **Rule idea:** a value
+  histogram bunched in the middle with no real darks or lights (the reverse of Goree's
+  high-contrast finding; check both ends).
+- **Silhouette** (p. 158): the most important part of the pose, often the hands or the face,
+  "should be brought into the silhouette rather than embedded inside the pose". **Direction.**
+- **Make it simple** (p. 162): "If you want to make your composition memorable, make it simple."
+  "Busy pictures with lots of little separate shapes have less impact." Join neighbouring shapes
+  of similar value into larger ones (shapewelding). **Rule idea:** with Loomis's tonal plans:
+  many small, separate value shapes.
+- **The windmill principle** (pp. 166–167): vary the four relations along a form's edge (light on
+  dark, dark on light, light on light, dark on dark) to "avoid the pasted-on look that happens if
+  you don't concentrate on losing some edges and accentuating others." "The whole silhouette is
+  not equally interesting or relevant to the story, and you might as well let parts of it
+  disappear." **Rule idea:** a subject whose whole outline has the same contrast against the
+  background (with Loomis's hard edges all round).
+- **What eye-tracking shows** (p. 169): "The eye does not necessarily flow in curves or circles,
+  nor does it follow contours. It leaps from one point of interest to another." Two people do not
+  scan the same picture along the same route. And (p. 171): "Abstract design gets trumped by human
+  narrative": faces draw almost everyone's attention. **Direction:** a correction to Loomis's eye
+  path. Do not build rules on lines leading the eye; do build them on where faces and contrast
+  sit.
+- **Clustering against even spacing** (p. 174): a discarded sketch "suffers from a lack of
+  clustering. The figures are spaced out evenly, each silhouette is separate from the others, and
+  the heads are spaced well apart." "I have to fight the instinct to line up the toy soldiers,
+  spread them out on the table, give everything equal importance, and define every edge in the
+  same way." **Rule idea:** the clearest statement of the even-spacing rule (with Payne and
+  Loomis): figure or head centers spaced at near-equal intervals, no overlaps.
+- **Flagging the head** (p. 175): a light shape behind the main character's head; "Empty space
+  around a face gives it a chance to breathe." Background suggests information "rather than
+  delineating it". **Direction.**
+- **Restraint over violent action** (p. 178): Pyle's advice that "to put figures in violent action
+  is theatrical and not dramatic"; "in deep emotion there is a certain dignity and restraint of
+  action which is more expressive." **Context:** with Loomis on overacting.
+- **One light, even across composited parts** (pp. 73, 182): when photographing props for a
+  composite he kept the same lighting on each and photographed a ruler beside them for scale; a
+  cutaway "can be lit with a single, consistent light source." **Rule idea:** supports the
+  lighting check; scale mismatch between parts is a second check.
+- **Too pristine** (p. 136): "In both digital and painted renderings, surfaces usually come out
+  looking pristine and new, so adding these qualities takes deliberate effort." Early science
+  fiction showed "a world where everything was in neat, new condition and with a uniform style."
+  **Rule idea:** uniformly clean, new surfaces with no wear (with Goree's too smooth and Loomis's
+  ultra-smooth tones).
+- **Not everyone is busy** (p. 54): "paintings of work scenes show everyone looking too earnest
+  and industrious. In real life, some of the laborers must have been standing around doing
+  nothing." **Rule idea:** every figure in a group performing the same eager action (the stock
+  photo team).
+- **The setting defines the person** (p. 72): the environment "should be unique and defining."
+  **Context:** against the generic office or gradient background.
+- **Capture the epic, not the incident** (p. 55). **Direction.**
+- **It would never work** (p. 138): a fire-engine designer's verdict on his sketch was "Very nice
+  ... but it would never work", followed by a list of mechanical faults. **Context:** invented
+  machines must be plausible; the AI version is the device that cannot function (with Loomis's
+  misstatements).
+- **Not derivative** (pp. 14, 74): copy several artists side by side so as not to become
+  derivative; for a Rockwell-like subject he "closed all my books on him" to find answers in real
+  life. **Context.**
+- **Many thumbnails** (pp. 30–31): Pyle liked fifty thumbnails per illustration; keep "a mental
+  attitude of disinterest, detachment, and restlessness, always ready to try something else
+  before getting married to one idea." **Context:** with Loomis's first idea.
+- **Photodependent** (p. 64): the word "describes a painting with an unwanted
+  photographic look." "Photos are a big help, but you can't take them too literally"; "Every photo
+  is just a starting place". **Context:** Gurney's name for what AI images share with copied
+  photos.
+- **Forget about style** (p. 210): paint "with as few mannerisms and conventions as possible.
+  Those stylistic mannerisms will make your pictures look dated in the future". **Context:** the
+  house styles of image generators are mannerisms in this sense, and they date quickly.
+
+---
+
+## What the copy and illustration books change
+
+All fifteen books predate today's image and text generators (the newest edition here is Bang's,
+from 2016).
+Linking what they describe to AI output is my reading, not theirs. What
+they add is a craft reason for each rule: the rules in attentry-design-copy.md and
+attentry-design-illustration.md came from AI-detection research, and the books show that every one
+of those habits was named as a fault long before chatbots. That matters for the "not a detector"
+promise: a finding can cite an editor or an illustrator, not a guess about who made the thing.
+
+1. **Copy: the existing rules now have craft grounding.**
+   - Vocabulary and puffery: Klinkenborg calls "robust" and "vibrant" empty modifiers (eb 142);
+     Handley's buzzwords are fine "used sparingly" and "toxic" in numbers (Rule 29), the same
+     density idea as Wikipedia's; Zinsser's fad words include "prioritize" (p. 16); Heath shows
+     overuse emptying "unique" (eb 164–166); Krug's "happy talk" is self-praise without the facts
+     (p. 46).
+   - The participle tail: Klinkenborg's over-signifying (eb 111–114) and Williams's misused free
+     modifiers (Lesson 8).
+   - Uniform rhythm: Williams gives thresholds (all over 30 words or all under 15, Lesson 9);
+     Klinkenborg adds repeated sentence structure as a second measure (eb 77); Strunk's Rule 14 is
+     the same fault in 1918.
+   - Repeated contrasts and triads: "used to excess, these patterns can seem merely clever"
+     (Williams, Lesson 9); they are "tying your hands" (Klinkenborg, eb 109).
+   - No specifics: Hopkins's before-and-after claims ("Actual figures are not generally
+     discounted", pp. 23–24), Heath's concreteness (ch. 3), Lamott's details (eb 22).
+2. **Copy: new rule ideas.**
+   - **The swap test** (Handley, Rule 42): a sentence that stays true with a competitor's name in
+     it. Approximated by sentences with no product-specific noun, number or name.
+   - **Nominalization patterns** (Williams's five, Lesson 3) and **noun stacks** (Zinsser,
+     pp. 76–77). Reinhart et al. measured the nominalizations at 1.5–2 times the human rate.
+   - **Unsupported superlatives** (Hopkins pp. 23–24, Zinsser p. 78).
+   - **Counterfeit persuasion** (Cialdini, ch. 4, 6, 7): social proof with no number or source,
+     authority with no named expert, award or study, and scarcity or urgency language. For a free,
+     open-source tool, scarcity is always counterfeit.
+   - **Fluff shapes** (Fitzpatrick, eb 29): copy whose claims are mostly future promises or
+     hypotheticals (*will transform*, *can help*), with no present facts.
+   - **Sentence-initial connectives in density** ("Moreover,", "Additionally,", "Indeed,";
+     Klinkenborg eb 96–97).
+   - **Metadiscourse**: announced topics and attributed observations (Williams, Lesson 7).
+   - **Redundant pairs and categories, wordy phrases** (Williams Lesson 7, Strunk Rule 13,
+     Zinsser ch. 2–3, Handley Rule 13).
+   - **"We" against "you"** on product pages (Handley, Rule 12).
+   - **Moralizing openers** ("Don't forget…", "Always remember to…"; Handley, Rule 40).
+   - **Running starts**: an opening with no claim, number or name (Handley Rule 15; Zinsser's
+     lead, p. 55).
+   - **Motto taglines**: a tagline that names no product, user or benefit (Krug, pp. 103–105).
+   - **Exclamation points and little qualifiers** (Zinsser, pp. 71–72).
+   - **The missing actor**: the company vanishes from sentences about mistakes (Williams,
+     Lesson 12). A context check, for honesty rather than style.
+3. **Copy: corrections.**
+   - **Don't flag the passive.** Williams lists its proper uses (Lesson 4), and AI copy uses the
+     agentless passive less than people do (Reinhart et al.). The fault is nominalization.
+   - **"Not X but Y" is legitimate once** (Strunk, Rule 12: "Not charity, but simple justice").
+     Only the reflex counts.
+   - **Topic sentences**: Williams wants a stated point up front (Lessons 10–11); Klinkenborg
+     calls announcing sentences scaffolding (eb 25–28). Both rule out a sentence that only
+     announces. A point sentence must carry content itself.
+   - **The draft problem is reversed** (Lamott, eb 24, 36): AI copy is a polished first draft with
+     nothing true in it. The direction must ask for facts first, not for polish.
+4. **Illustration: four sources now agree on the main rules.**
+   - **Centered subject**: Bang's principle 5 (eb 22–23), Payne's dead spot (p. 38), Loomis's
+     "dud" figure in the dead center (p. 99) and focal point never at the center (p. 46), and
+     Goree's measurement.
+   - **Even spacing and equal masses**: Payne (pp. 38, 104), Loomis's "greatest variety of spaces"
+     (p. 34) and Gurney's clustering (p. 174: "line up the toy soldiers … give everything equal
+     importance").
+   - **Too smooth, too clean**: Loomis's "ultra-smoothness of the tones" as what marks a photo
+     (p. 108), Gurney's "pristine and new" digital surfaces (p. 136), Bang's mechanical "perfect
+     order" (principle 10).
+5. **Illustration: new rule ideas.**
+   - **Lighting consistency, made concrete** (Loomis p. 22): no shadow region lighter than a lit
+     region; one source for every element; shadow color never more saturated than the same color
+     in light (pp. 152–153). Gurney keeps one lighting setup across every photographed part of a
+     composite (p. 73).
+   - **Even sharpness**: detail and edge sharpness that don't fall off with depth or with distance
+     from the focal point (Loomis pp. 100–101, 116); a subject with the same hard edge all round,
+     the pasted-on look (Loomis pp. 23, 202; Gurney's windmill principle, pp. 166–167).
+   - **Values at both ends**: too many value groups, with contrast scattered (Loomis's four tonal
+     plans, pp. 88–90) or bunched in the middle (Gurney's "middle value mumbling", p. 156). A
+     histogram check in both directions.
+   - **Raw color**: all three primaries at full strength in one picture, or too many hue clusters
+     (Loomis p. 168); skin pushed hotter than the scene's light explains (Loomis p. 293), judged
+     against the rest of the frame, never against a standard skin color.
+   - **Two eye levels**: vanishing lines meeting at different heights, figures on one floor cut by
+     the horizon at different body heights (Loomis pp. 41–42). A composite made of parts with
+     different camera heights is the classic case.
+   - **Figures**: everyone looking into the camera in a scene that isn't a direct appeal (Loomis
+     p. 195); big expressions over small matters (Loomis pp. 195, 200; Pyle via Gurney p. 178);
+     every figure doing the same eager task (Gurney p. 54).
+   - **Night scenes with lifted shadows** (Loomis p. 170).
+6. **Illustration: corrections.**
+   - **Don't reward thirds.** Payne's fifteen composition types don't include the thirds grid, and
+     Loomis avoids even the one-third point when dividing a frame (p. 36). A check can flag the
+     center and the exact thirds bands, but must never score thirds placement as "good".
+   - **Don't build rules on leading the eye.** Loomis's eye-path rules (p. 47) don't hold up under
+     Gurney's eye-tracking data: the eye leaps between points of interest, two viewers take
+     different routes, and faces win over abstract design (pp. 169–171). Rules about where faces
+     and the strongest contrast sit are sound; rules about line paths are not.
+   - **Errors and style are different findings.** Loomis's line between faking and imagination
+     (pp. 204–205): style is free, but "the misstatements, things meant to be right that through our
+     ignorance are not" can be checked. Light, perspective, hands, lettering and machines that
+     couldn't work are errors; centered subjects, smoothness and palettes are defaults. Reports
+     should keep the two apart and phrase the second kind as suggestions.
+7. **Limits.** Most of what these books teach is direction (what to ask for), not a check. The
+   rule ideas above are the measurable part. Each still needs fixtures it must flag and must not
+   flag, and a run against the baseline before it ships.

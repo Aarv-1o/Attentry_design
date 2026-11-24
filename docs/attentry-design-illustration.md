@@ -69,9 +69,9 @@ For **code-drawn** illustrations, from the source; for **generated** ones, from 
 
 | Rule idea | Code-drawn | Generated | Grounding |
 |---|---|---|---|
-| **Subject dead center, every time** | subject bounding box from the source | saliency or subject mask center | Goree; Mateu-Mestre (off-center beats symmetry) |
-| **Thirds-banded layering** | horizontal bands at 1/3 and 2/3 | luminance/edge profile by row | Goree's pixel averages |
-| **Too smooth (no texture)** | flat fills only, no noise/grain/brush layer | low high-frequency energy, flat noise spectrum | Goree's spectrograms; illustrators adding grain |
+| **Subject dead center, every time** | subject bounding box from the source | saliency or subject mask center | Goree; Mateu-Mestre; Bang principle 5; Payne p. 38; Loomis pp. 46, 99 |
+| **Thirds-banded layering** | horizontal bands at 1/3 and 2/3 | luminance/edge profile by row | Goree's pixel averages; Payne's equal spacing (never score thirds as good, see below) |
+| **Too smooth (no texture)** | flat fills only, no noise/grain/brush layer | low high-frequency energy, flat noise spectrum | Goree's spectrograms; Loomis p. 108; Gurney p. 136 |
 | **Lighting disagrees** | shadows/highlights placed in different directions per element | shadow direction estimates disagree | Kamali/Groh "physics"; Gurney's one lighting plan |
 | **Saturation and contrast maxed** | palette chroma near the gamut edge everywhere | saturation histogram mostly high | Fast Company; Gurney: "better gray than garish" |
 | **Default palette** | muted yellow/blue complement as the whole scheme | hue clusters at yellow + blue | Goree |
@@ -81,6 +81,17 @@ For **code-drawn** illustrations, from the source; for **generated** ones, from 
 | **Garbled or fake lettering** | n/a (text is real) | OCR on text-like regions returns non-words | Tuts+ |
 | **Off-brand style** | fonts, stroke widths, corner radii vs. the project's | n/a | Shaw's style frames |
 | **No contact shadows / floating objects** | objects without a base shadow | n/a (hard) | Yot, Gurney, Bousquet |
+| **Shadow lighter than light** | n/a (source names the light) | a shadow region brighter than a lit region on the same or a neighbouring object | Loomis p. 22 |
+| **Shadow more saturated than light** | shadow fill chroma above the lit fill of the same object | same, from pixels per object | Loomis pp. 152–153 |
+| **Even sharpness, no depth falloff** | same stroke weight and detail at every depth | high-frequency energy and edge sharpness flat across depth and away from the focal point | Loomis pp. 100–101, 116 |
+| **Pasted-on subject** | one hard outline of constant contrast all round | constant edge contrast along the whole subject outline | Loomis pp. 23, 202; Gurney's windmill principle, pp. 166–167 |
+| **Values: scattered or mumbling** | count of distinct value levels | value histogram: many small clusters, or bunched in the middle with no real darks or lights | Loomis's four tonal plans, pp. 88–90; Gurney p. 156 |
+| **Even spacing** | equal gaps between figure or element centers | figure or head centers at near-equal intervals, no overlaps | Payne pp. 38, 104; Loomis p. 34; Gurney p. 174 |
+| **Raw primaries together** | full-chroma red, yellow and blue fills in one picture | same, from hue clusters | Loomis p. 168 |
+| **Hot skin** | n/a | skin more saturated and warmer than the scene's own light explains, compared with other surfaces in the same frame (never with a reference skin color) | Loomis p. 293 |
+| **Two eye levels** | vanishing points at different heights | vanishing lines meet at different heights; the horizon cuts figures on one floor at different body heights | Loomis pp. 41–42 |
+| **Everyone faces the camera** | n/a | every face looking at the viewer in a scene that isn't a direct appeal | Loomis p. 195 |
+| **Night with lifted shadows** | n/a | a dark-key scene whose shadows are light and low-contrast | Loomis p. 170 |
 
 Most measurable and most telling first: too smooth, saturation/contrast maxed, centered subject
 with thirds bands, and garbled lettering. Lighting consistency is valuable but hard on pixels;
@@ -88,7 +99,9 @@ for code-drawn art it's easy (the source names the light).
 
 **Must not flag:** deliberate centered icons and logos; flat-style illustration that is flat on
 purpose and consistent; symmetric subjects (architecture); a saturated accent on a calm field
-(that's Gurney's accent rule working).
+(that's Gurney's accent rule working); skin of any tone (a skin check compares skin with the
+light on the rest of the scene, never with a standard skin color); faces looking at the viewer
+in a portrait or an ad that speaks to the reader (Loomis's direct appeal).
 
 ## Direction before drawing (what the agent hears)
 
@@ -108,6 +121,46 @@ For illustration specifically:
 - **Keep the house style**: the project's own palette, strokes and fonts (Attentry's posts use
   `marketing/build.mjs` tokens).
 
+## What the books add (read 2026-11-24)
+
+Bang, Payne, Loomis and Gurney's *Imaginative Realism*, read twice, with notes and page
+references in attentry-design-book-notes.md. In short:
+
+- **The main rules now have three or four sources each.** Centered subject: Bang (the center is for
+  stillness, "an object of meditation"), Payne (the center is a "dead spot"), Loomis (a figure in
+  the dead center is "going to be a dud"), Goree. Even spacing: Payne, Loomis ("the greatest
+  variety of spaces possible") and Gurney ("I have to fight the instinct to line up the toy
+  soldiers"). Too smooth: Loomis ("the ultra-smoothness of the tones" is what marks a photo) and
+  Gurney (digital surfaces "come out looking pristine and new").
+- **Lighting becomes checkable** (Loomis): no area in shadow as light as the areas in light; one
+  source for every element; color strongest at the edge of the light, never brighter in shadow.
+- **Errors and defaults are different findings** (Loomis on faking): style is free, but "the
+  misstatements, things meant to be right that through our ignorance are not" can be checked.
+  Light, perspective, hands, lettering and machines that couldn't work are errors. Centered
+  subjects, smoothness and palettes are defaults, reported as suggestions.
+- **Corrections:**
+  - **Never score thirds as good.** Payne's fifteen composition types don't include it, and
+    Loomis avoids even the one-third point when dividing a frame. Flag the center and exact
+    thirds bands; don't reward them.
+  - **No rules about leading lines.** Gurney's eye-tracking data shows the eye leaps between
+    points of interest, viewers take different routes, and faces beat abstract design. Rules on
+    where faces and the strongest contrast sit hold up; rules on line paths don't.
+
+**Direction additions:**
+
+- **Plan values first**: a few big value shapes (Loomis's four tonal plans), not contrast
+  everywhere and not everything mid-grey (Gurney).
+- **Choose one composition type** from Payne's fifteen, not the default.
+- **Cluster, overlap and vary**: group figures, overlap equal forms, vary every gap.
+- **Lose some edges**: vary edge contrast along the subject (the windmill principle) and let
+  detail fall off with depth.
+- **Restrict color**: grey most of it, keep raw color for the focal point, never all three
+  primaries at full strength.
+- **Direct the figures**: natural poses, small expressions, gaze into the scene unless the image
+  addresses the viewer, and not everyone busy at the same task.
+- **Don't accept the first idea** (Loomis): the first thing that comes to mind is what everyone
+  else would make; the generator's first result is the same thing.
+
 ## Limits
 
 - **Not a detector.** Same rule as copy: flag craft problems, never claim "AI made this".
@@ -118,6 +171,8 @@ For illustration specifically:
   an illustration is good.
 
 ## Sources
+
+- Books: see attentry-design-book-notes.md (Bang, Payne, Loomis, Gurney's *Imaginative Realism*).
 
 - Sam Goree, "Why does AI art look like that?" (2025): https://samgoree.github.io/2025/07/11/Why_does_ai_art_look_like_that.html ; GenImage dataset: https://genimage-dataset.github.io/ ; paper: https://arxiv.org/pdf/2306.08571 ; Knowing Machines, "Models all the way down": https://knowingmachines.org/models-all-the-way
 - Kamali, Nakamura, Chatzimparmpas, Hullman, Groh, "How to Distinguish AI-Generated Images from Authentic Photographs": https://arxiv.org/pdf/2406.08651 ; "Characterizing Photorealism and Artifacts in Diffusion Model-Generated Images" (CHI 2025): https://arxiv.org/abs/2502.11989 ; Kellogg Insight summary: https://insight.kellogg.northwestern.edu/article/ai-photos-identification
