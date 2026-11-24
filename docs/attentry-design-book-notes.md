@@ -1882,6 +1882,7 @@ Your Own Pixel Art.)
    size, replacing a fixed grid count.
 6. **Visual tension** (Glitschka pp. 189–191, from the second reading): shapes or text almost
    touching an edge read as a mistake; a clear gap or a clear overlap fixes it. The brief asks for
-   it; a check on element boxes is a rule idea.
+   it, and check_design now flags text that almost touches the edge of the card or bubble it sits
+   in (a suggestion).
 7. **Still missing for the five styles:** books on isometric and on the 3D look; Stanchfield's
    *Drawn to Life* for the hand-drawn figures.

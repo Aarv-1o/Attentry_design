@@ -36,6 +36,7 @@ export interface Rendered {
   fonts: string[]; // first family of every font in use
   texts: TextBox[];
   cut: Box[]; // small painted shapes that run past the frame's edge
+  panels: Box[]; // painted shapes big enough to hold text (cards, bubbles, buttons, panels)
 }
 
 // One browser for the whole run, shared by every render (launched once even when renders start
@@ -74,7 +75,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
   // A generated image is only pixels: nothing to read from a source, lettering comes from OCR.
   if (RASTER.has(extname(file).toLowerCase())) {
     const { data, info } = await sharp(file).png().toBuffer({ resolveWithObject: true });
-    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [] };
+    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [], panels: [] };
   }
   const page = await (await getBrowser()).newPage({
     viewport: { width: options.width ?? 1200, height: options.height ?? 800 },
@@ -87,7 +88,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
     await page.evaluate("document.fonts.ready");
     const viewport = page.viewportSize()!;
     const png = await page.screenshot({ type: "png" });
-    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut">;
+    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut" | "panels">;
     return { file, png, width: viewport.width, height: viewport.height, ...read };
   } finally {
     await page.close();
@@ -108,7 +109,8 @@ const SVG_SIZE = `(() => {
 export const READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
-  const colors = new Set(), fonts = new Set(), texts = [], cut = [];
+  const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [];
+  const panel = (r) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height }); };
   const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
   const opacityOf = (el) => { let o = 1; for (let e = el; e; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
@@ -143,12 +145,13 @@ export const READ_DESIGN = `(() => {
       const paints = el.tagName.toLowerCase() === "line" ? [style.stroke] : [style.fill, style.stroke];
       for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
       const r = el.getBoundingClientRect();
+      panel(r);
       const small = r.width * r.height < 0.02 * vw * vh;
       if (small && r.width > 0 && (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) && cut.length < 200) {
         cut.push({ x: r.x, y: r.y, width: r.width, height: r.height });
       }
     } else {
-      if (visible(style.backgroundColor)) colors.add(style.backgroundColor);
+      if (visible(style.backgroundColor)) { colors.add(style.backgroundColor); panel(el.getBoundingClientRect()); }
       if (parseFloat(style.borderTopWidth) > 0 && visible(style.borderTopColor)) colors.add(style.borderTopColor);
     }
     const own = Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE)
@@ -169,5 +172,5 @@ export const READ_DESIGN = `(() => {
       box: { x: r.x, y: r.y, width: r.width, height: r.height },
     });
   }
-  return { colors: [...colors], fonts: [...fonts], texts, cut };
+  return { colors: [...colors], fonts: [...fonts], texts, cut, panels };
 })()`;

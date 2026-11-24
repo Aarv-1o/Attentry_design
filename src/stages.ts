@@ -114,6 +114,7 @@ async function storyboardOf(project: string, entry: string, remotion: RemotionPr
     fonts: [...new Set(frames.flatMap((f) => f.fonts))],
     texts: [],
     cut: [],
+    panels: [],
   };
 }
 

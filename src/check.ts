@@ -34,7 +34,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     if (t.source !== "ocr") findings.push(...(await contrastFinding(rendered, t)));
     findings.push(...edge(rendered, t));
   }
-  findings.push(...phoneSize(rendered, texts), ...(await legibility(rendered)));
+  findings.push(...phoneSize(rendered, texts), ...(await legibility(rendered)), ...tension(rendered, texts));
   if (rendered.cut.length) {
     findings.push({
       rule: "shapes-cut",
@@ -292,6 +292,34 @@ export async function mixels(p: Picture, lock: DesignLock): Promise<Finding[]> {
     kind: "error",
     message: `This pixel art mixes pixel sizes: parts are drawn with ${[counted[0], ...scaled].map((s) => `${s} px`).join(" and ")} pixels. Draw everything on one pixel grid; to make a sprite bigger, redraw it at the larger size instead of doubling its pixels.`,
     source: "Azzi, Pixel Logic p. 21 (mixels)",
+  }];
+}
+
+/**
+ * Visual tension (Glitschka, Vector Basic Training pp. 189–191): text that almost touches the edge
+ * of the shape it sits in, a card, a bubble, a button. "The circle is too close to the edge of the
+ * green square. It unintentionally draws the eye to that area." Clearly inside or clearly over the
+ * edge is fine; a hair away, or a hair over, is not.
+ */
+export function tension(r: Rendered, texts: TextBox[]): Finding[] {
+  const tight: string[] = [];
+  for (const t of texts.filter((t) => t.source !== "ocr")) {
+    const cx = t.box.x + t.box.width / 2, cy = t.box.y + t.box.height / 2;
+    // The smallest panel around the text's middle that is bigger than the text itself.
+    const holder = r.panels
+      .filter((p) => cx > p.x && cx < p.x + p.width && cy > p.y && cy < p.y + p.height && p.width * p.height > 1.5 * t.box.width * t.box.height)
+      .sort((a, b) => a.width * a.height - b.width * b.height)[0];
+    if (!holder) continue;
+    const near = Math.max(2, 0.2 * t.box.height); // a hair: a fifth of the text's height
+    const gaps = [t.box.x - holder.x, holder.x + holder.width - (t.box.x + t.box.width), t.box.y - holder.y, holder.y + holder.height - (t.box.y + t.box.height)];
+    if (gaps.some((g) => Math.abs(g) < near)) tight.push(what(t));
+  }
+  if (!tight.length) return [];
+  return [{
+    rule: "visual-tension",
+    kind: "default",
+    message: `${tight.join(", ")} ${tight.length === 1 ? "almost touches" : "almost touch"} the edge of the shape around ${tight.length === 1 ? "it" : "them"}. Give clear room inside, or let it clearly overlap the edge.`,
+    source: "Glitschka, Vector Basic Training pp. 189–191 (visual tension)",
   }];
 }
 

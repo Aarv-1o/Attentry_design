@@ -161,6 +161,13 @@ test("mixels: doubled sprites beside 1x lettering are caught; one grid passes", 
   assert.deepEqual(await mixels(await load("github-pixel-cards.svg"), { ...lock, style: "flat 2D" }), []);
 });
 
+test("visual tension: a label crammed against its card's edge is named; one with room isn't", async () => {
+  const found = (await check(await load("tight-card.svg"), await measure((await load("tight-card.svg")).png))).find((f) => f.rule === "visual-tension");
+  assert.ok(found);
+  assert.match(found.message, /"Track changes"/);
+  assert.ok(!found.message.includes("Roll back"));
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });
