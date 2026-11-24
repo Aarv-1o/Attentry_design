@@ -94,6 +94,14 @@ test("lock: the locked design passes; a drifted one is caught for color and font
   assert.ok(found.includes("off-lock-fonts"));
 });
 
+test("check: four texts at one size have no hierarchy; a clear headline does", async () => {
+  assert.ok((await rules("flat-labels.svg")).includes("no-hierarchy"));
+  assert.ok(!(await rules("invite-steelyard.svg")).includes("no-hierarchy")); // 2 texts: nothing to rank
+  const { hierarchy } = await import("../src/check.ts");
+  const box = (size: number) => ({ text: "x", color: "#000", fontFamily: "A", fontSize: size, size, opacity: 1, bold: false, box: { x: 0, y: 0, width: 1, height: 1 } });
+  assert.deepEqual(hierarchy([box(96), box(36), box(36), box(30)]), []);
+});
+
 test("a pixel-art lock: crisp pixels pass, smoothed edges are caught", async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   const crisp = await load("pixel-crisp.svg");

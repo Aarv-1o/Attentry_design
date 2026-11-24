@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#f4efe6"/>
+  <text x="80" y="120" font-family="Arial" font-size="40" fill="#222">GitHub</text>
+  <text x="80" y="260" font-family="Arial" font-size="36" fill="#222">Branches</text>
+  <text x="80" y="380" font-family="Arial" font-size="36" fill="#222">Pull requests</text>
+  <text x="80" y="500" font-family="Arial" font-size="36" fill="#222">Reviews</text>
+</svg>

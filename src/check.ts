@@ -15,6 +15,7 @@ export interface Picture {
   width: number;
   height: number;
 }
+const HEADLINE_LEAD = 1.5; // how much bigger the headline should be than the typical text
 const PIXEL_COLORS = 64; // distinct colors above which edges are smoothed, not pixel art
 const OFF_PALETTE = 0.03; // OKLab distance that still counts as the same color
 const oklab = differenceEuclidean("oklab");
@@ -27,6 +28,8 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
   }
 
   if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...(await pixelEdges(rendered, lock)));
+
+  findings.push(...hierarchy(rendered.texts));
 
   if (m.centered && !lock?.composition.centered) {
     findings.push({
@@ -158,6 +161,23 @@ export async function pixelEdges(p: Picture, lock: DesignLock): Promise<Finding[
     rule: "pixel-edges",
     kind: "error",
     message: `The "${lock.name}" lock is pixel art, but the picture has ${colors.size} distinct colors: edges are smoothed, not pixel-sharp. Draw on whole pixels and add shape-rendering="crispEdges" (SVG) or image-rendering: pixelated (CSS).`,
+  }];
+}
+
+/**
+ * Type hierarchy: with three or more texts, one should clearly lead. When the biggest is barely
+ * bigger than the typical one, everything reads at the same level and nothing reads first.
+ */
+export function hierarchy(texts: TextBox[]): Finding[] {
+  const sizes = texts.map((t) => t.size).sort((a, b) => a - b);
+  if (sizes.length < 3) return [];
+  const median = sizes[sizes.length >> 1], biggest = sizes.at(-1)!;
+  if (biggest >= HEADLINE_LEAD * median) return [];
+  return [{
+    rule: "no-hierarchy",
+    kind: "default",
+    message: `${sizes.length} texts, all about the same size (${Math.round(sizes[0])}–${Math.round(biggest)} px): nothing reads first. Make one headline at least ${HEADLINE_LEAD}× the labels.`,
+    source: "Williams, The Non-Designer's Design Book: contrast must be strong; Attentry Design rules R4",
   }];
 }
 

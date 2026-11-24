@@ -25,7 +25,7 @@ test("design requests are recognized; code requests that mention visual words ar
 test("the brief walks through the stages; a quick request goes straight to the check", async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   const full = await brief("make an invitation illustration", project);
-  for (const word of ["Brief", "check_options", "lock_design", "check_design", "not taste", "stick figure, flat 2D, 3D, pixel art", "differ in style"]) assert.ok(full?.includes(word), word);
+  for (const word of ["Brief", "check_options", "lock_design", "check_design", "not taste", "stick figure, flat 2D, 3D, pixel art", "differ in style", "single message", "measure each line", "24 grid squares"]) assert.ok(full?.includes(word), word);
   assert.match(full!, /decline the questions, don't stop/);
   const quick = await brief("just a quick poster for tonight", project);
   assert.ok(quick?.includes("check_design"));

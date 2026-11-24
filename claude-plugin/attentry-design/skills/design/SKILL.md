@@ -4,7 +4,7 @@ description: Make an illustration or a video with Attentry Design's stages (brie
 ---
 
 1. **Brief.** Ask the person, in one round with your question tool, only what they didn't say:
-   what it's for, who sees it, where it's used and at what size, the style of the world (stick
+   the one thing it should say, what it's for, who sees it, where it's used and at what size, the style of the world (stick
    figure, flat 2D, 3D, pixel art, or another), the exact text, the mood, and anything it must
    have or avoid. If they skip or decline the questions, don't stop: choose sensible answers
    yourself, state them in one line, and go on to the options, where they choose by looking.
@@ -13,6 +13,10 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    and in style if the person didn't choose one. Call Attentry Design's `check_options` with the
    files and redo what it flags. Then show the person the contact sheet and ask which one, by
    number.
+   While drawing: build it around that one message. Plan the text first: one headline, labels
+   clearly smaller (sizes at least 1.5× apart), and measure each line (characters × letter width)
+   against the frame so it stays inside a 5% margin. Make the main characters big enough to carry
+   detail (in pixel art, about 24 grid squares tall or more).
 3. **Lock.** Call `lock_design` with the chosen file, a short name and the style. A pixel-art lock
    is checked for pixel-sharp edges.
 4. **Finish.** Make it full size and call `check_design` with the file and the lock. Fix the
