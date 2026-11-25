@@ -2,7 +2,7 @@
 // whether the stages' libraries are installed, and whether a browser is there to render with. No
 // vscode import, so the tests can run it.
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -63,6 +63,20 @@ export async function connect(home: string, folder: string): Promise<PluginState
     return failed(error, connectCommand(home));
   }
   return pluginState(folder, home);
+}
+
+// Versions in order (0.1.10 after 0.1.9).
+const byVersion = new Intl.Collator("en", { numeric: true }).compare;
+const carried = (home: string) => (JSON.parse(readFileSync(join(home, "attentry-design", ".claude-plugin", "plugin.json"), "utf8")) as { version: string }).version;
+
+/**
+ * When the editor starts: a plugin older than the one this extension carries is updated, so an
+ * extension update reaches the agent. A newer one (from another editor's extension) is left alone.
+ */
+export async function refresh(home: string, folder: string): Promise<PluginState> {
+  const state = await pluginState(folder, home);
+  if (!("installed" in state) || !state.installed || byVersion(state.version, carried(home)) >= 0) return state;
+  return connect(home, folder);
 }
 
 /**

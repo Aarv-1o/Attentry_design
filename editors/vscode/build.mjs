@@ -1,7 +1,8 @@
 // Builds the extension (dist/extension.js) and the plugin marketplace it carries (claude/): the
 // repo's Claude Code plugin as committed, which Connect installs into Claude Code.
 import { build } from "esbuild";
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import sharp from "sharp";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,3 +21,7 @@ await mkdir(join(claude, ".claude-plugin"), { recursive: true });
 const market = JSON.parse(await readFile(join(repo, ".claude-plugin/marketplace.json"), "utf8"));
 market.plugins = market.plugins.map((p) => ({ ...p, source: "./attentry-design" }));
 await writeFile(join(claude, ".claude-plugin/marketplace.json"), `${JSON.stringify(market, null, 2)}\n`);
+
+// The store wants a PNG icon and the package its own license.
+await sharp(join(here, "resources/tile.svg")).resize(256, 256).png().toFile(join(here, "dist/icon.png"));
+await copyFile(join(repo, "LICENSE"), join(here, "LICENSE"));

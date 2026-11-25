@@ -6,3 +6,7 @@ __pycache__/
 # The extension's build: the bundle and the plugin marketplace it carries.
 editors/vscode/dist/
 editors/vscode/claude/
+
+# The extension package and the license the build copies in.
+editors/vscode/*.vsix
+editors/vscode/LICENSE

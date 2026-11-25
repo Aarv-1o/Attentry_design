@@ -1,0 +1,8 @@
+# Only the bundle, the page, the icons and the plugin it carries go in the package.
+src/**
+node_modules/**
+build.mjs
+tsconfig.json
+package-lock.json
+resources/tile.svg
+*.vsix

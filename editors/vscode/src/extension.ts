@@ -8,6 +8,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const sidebar = new Sidebar(context.extensionUri, context.workspaceState);
   const watcher = vscode.workspace.createFileSystemWatcher(`**/${LOCK_DIR}/*.json`);
   const changed = () => void sidebar.projectChanged();
+  void sidebar.start();
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("attentryDesign.panel", sidebar),
     vscode.commands.registerCommand("attentryDesign.connect", () => sidebar.connect()),

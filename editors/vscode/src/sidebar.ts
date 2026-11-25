@@ -6,7 +6,7 @@ import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import * as vscode from "vscode";
 import type { DesignKind } from "../../../src/brief.ts";
-import { browser, connect, libraries, pluginState, type PluginState } from "./claude.ts";
+import { browser, connect, libraries, pluginState, refresh, type PluginState } from "./claude.ts";
 import { locks, projectStatus, setPin } from "./design.ts";
 import { TIPS } from "./tips.ts";
 
@@ -82,6 +82,12 @@ export class Sidebar implements vscode.WebviewViewProvider {
     await this.send();
     this.plugin = await connect(this.home, this.project ?? homedir());
     this.justConnected = "installed" in this.plugin && this.plugin.installed;
+    await this.send();
+  }
+
+  /** At startup: brings Claude Code's copy of the plugin up to this extension's. */
+  async start(): Promise<void> {
+    this.plugin = await refresh(this.home, this.project ?? homedir());
     await this.send();
   }
 
