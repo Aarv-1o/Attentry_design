@@ -163,8 +163,9 @@ export const READ_DESIGN = `(() => {
       const paints = el.tagName.toLowerCase() === "line" ? [style.stroke] : [style.fill, style.stroke];
       for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
       const r = el.getBoundingClientRect();
-      panel(r);
       const tag = el.tagName.toLowerCase();
+      // Text is what sits in a panel, never the panel: a <text> would "hold" its own colored <tspan>.
+      if (tag !== "text" && tag !== "tspan" && tag !== "textpath") panel(r);
       if ((tag === "circle" || tag === "ellipse") && visible(style.stroke) && parseFloat(style.strokeWidth) > 0 && r.width > 4 && rings.length < 100) {
         rings.push({ x: r.x, y: r.y, width: r.width, height: r.height });
       }

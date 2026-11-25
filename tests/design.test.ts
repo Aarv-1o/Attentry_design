@@ -193,6 +193,11 @@ test("embedded content is texture, and text hidden by a crop isn't read", async 
   assert.ok(!r.fonts.includes("Consolas"));
 });
 
+test("visual tension: a colored word inside a line of text isn't held by its own line", async () => {
+  const r = await load("tspan-headline.svg");
+  assert.ok(!(await check(r, await measure(r.png))).some((f) => f.rule === "visual-tension"));
+});
+
 test("visual tension: a ring whose curve runs through a label is named; one clear of it isn't", async () => {
   const r = await load("ring-label.svg");
   const found = (await check(r, await measure(r.png))).find((f) => f.rule === "visual-tension");

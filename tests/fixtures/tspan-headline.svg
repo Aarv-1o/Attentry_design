@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#f7f1e3"/>
+  <text x="60" y="160" font-family="Arial" font-size="64" font-weight="700" fill="#1f2430"><tspan fill="#127a66">GitHub:</tspan> your code</text>
+  <text x="60" y="300" font-family="Arial" font-size="32" fill="#1f2430">a label below it</text>
+</svg>
