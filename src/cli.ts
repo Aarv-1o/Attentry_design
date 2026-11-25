@@ -8,7 +8,8 @@ import { readFile } from "node:fs/promises";
 import { closeBrowser } from "./render.ts";
 import { closeRemotion } from "./remotion.ts";
 import { closeOcr } from "./lettering.ts";
-import { parseSize, runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
+import { runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
+import { parseSize } from "./limits.ts";
 import { runHook } from "./hook.ts";
 import { runMcpServer } from "./mcp.ts";
 
@@ -93,7 +94,7 @@ const [command] = process.argv.slice(2);
 if (command === "hook") {
   await runHook();
 } else if (command === "mcp") {
-  runMcpServer(project);
+  runMcpServer(project, () => import("./core.ts"));
 } else {
   await main(process.argv.slice(2))
     .then((code) => (process.exitCode = code))

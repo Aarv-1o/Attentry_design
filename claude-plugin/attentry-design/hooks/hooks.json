@@ -1,6 +1,9 @@
 {
-  "description": "Attentry Design: when the person asks for a design, the stages to follow before drawing.",
+  "description": "Attentry Design: when the person asks for a design, the stages to follow before drawing. At the start of a session, it installs its libraries if they're missing (in the background, silently).",
   "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/dist/attentry-design.mjs", "setup", "--background"], "timeout": 30 }] }
+    ],
     "UserPromptSubmit": [
       { "hooks": [{ "type": "command", "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/dist/attentry-design.mjs", "hook"], "timeout": 30 }] }
     ]

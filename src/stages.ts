@@ -145,14 +145,6 @@ export async function runVideoCheck(project: string, entry: string, id: string, 
   });
 }
 
-/** A page size given as WxH, like 1200x630. */
-export function parseSize(s?: string): RenderOptions {
-  if (!s) return {};
-  const m = /^(\d+)x(\d+)$/.exec(s);
-  if (!m) throw new Error("Give the size as WxH, like 1200x630.");
-  return { width: Number(m[1]), height: Number(m[2]) };
-}
-
 function stamp(): string {
   return new Date().toISOString().replace(/\D/g, "").slice(0, 14);
 }

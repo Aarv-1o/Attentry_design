@@ -7,7 +7,9 @@ import type { Rendered } from "./render.ts";
 import { layoutDistance, measure, paletteDistance, type Measures } from "./measure.ts";
 import type { Finding } from "./findings.ts";
 
-export const MAX_OPTIONS = 5;
+import { MAX_OPTIONS } from "./limits.ts";
+
+export { MAX_OPTIONS };
 
 export interface Option {
   number: number;

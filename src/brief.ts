@@ -4,7 +4,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { LOCK_DIR } from "./lock.ts";
-import { MAX_OPTIONS } from "./options.ts";
+import { MAX_OPTIONS } from "./limits.ts";
 
 export type DesignKind = "illustration" | "video";
 

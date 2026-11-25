@@ -7,10 +7,25 @@ and the result has no errors. On your own machine, without another AI model, and
 taste. It starts with SVG/HTML illustration, [Remotion](https://www.remotion.dev) videos and
 Claude Code.
 
-**Status: building, step 3 of 4 done.** The plan is agreed (five stages: brief, options, lock,
-finish, card; illustration and video first). The engine that renders designs, checks whether
-options really differ, keeps the chosen one as a lock and checks the result works as a command
-and as a Claude Code plugin, for SVG/HTML illustrations and Remotion videos; packaging comes next.
+**Status: the Claude Code plugin is installable; the editor extension and the store listings come
+next.** Five stages: brief, options, lock, finish, card; illustration and video first. It renders
+designs, checks whether options really differ, keeps the chosen one as a lock and checks the
+result, for SVG/HTML illustrations and Remotion videos.
+
+## Install in Claude Code
+
+Needs Node 22 and Chrome or Edge (it renders designs in the browser you have; nothing else is
+downloaded for that).
+
+```
+/plugin marketplace add Aarv-1o/Attentry_design
+/plugin install attentry-design@attentry-design
+```
+
+Then ask for a design, like "an invitation illustration for my sister's wedding". The first time,
+the plugin installs the libraries its checks use (sharp, Playwright's driver, tesseract.js with its
+English data, about 100 MB): Claude Code does this when the plugin is installed, or the plugin does
+it in the background at the start of the next session. The brief works before they're in.
 
 ## Two halves
 
@@ -65,12 +80,15 @@ node --import tsx path/to/src/cli.ts video-lock src/index.ts OptionB --name prom
 node --import tsx path/to/src/cli.ts video-check src/index.ts Promo --lock promo
 ```
 
-To try it inside Claude Code for one session (nothing is installed into your Claude setup):
+To try a change inside Claude Code for one session (nothing is installed into your Claude setup):
 
 ```
 npm run build
 claude --plugin-dir path/to/Attentry_design/claude-plugin/attentry-design
 ```
+
+`npm run build` writes the plugin's two files in `dist/`; commit them with the change (a test
+fails when they're out of date).
 
 Then ask for a design, like "an invitation illustration for my sister's wedding".
 

@@ -138,8 +138,7 @@ Written by hand, because no library fits: the diversity report, the subject-posi
    staged way, like the direction test of 2026-11-19.
 2. **Claude Code** (built 2026-11-24, `claude-plugin/`). The brief hook and the three MCP tools, as a
    plugin. Tried in a real session: three options that differ, a lock, a finished design checked
-   clean. sharp and playwright-core resolve from the repo's node_modules for now; shipping them is
-   step 4.
+   clean. (How its libraries get installed: step 4.)
 3. **Video** (built 2026-11-24). Options are short compositions, shown as storyboards (5 key
    frames each). The finished video is read every quarter second, pixels and on-screen text, by
    driving the project's own Remotion bundle and server in the browser (Remotion's internals,
@@ -154,9 +153,19 @@ Written by hand, because no library fits: the diversity report, the subject-posi
    in a video (OCR about once a second; a picture full of lines counts as texture), and the
    approved script held in order and for its time. Pixel lettering is read as drawn and softened
    (OCR misreads blocky letters people read fine).
-4. **Packaging.** The VS Code extension and the stores, the site page, then Codex. Decide here how
-   it takes Attentry's plumbing (hooks install, background process, Check setup): a package
-   Attentry publishes, a copy, or a split-out core.
+4. **Packaging.** The Claude Code plugin is installable from GitHub (built 2026-11-25):
+   `/plugin marketplace add Aarv-1o/Attentry_design`. Its two built files are committed (a test
+   fails when they fall behind the source): `dist/attentry-design.mjs` runs the brief hook, the MCP
+   server and setup, with no heavy library in it, so it starts at once; `dist/core.mjs` holds the
+   stages and loads on the first tool call. sharp, playwright-core and tesseract.js (with its
+   English data) are platform-specific or large, so the plugin's package.json and lockfile pin
+   them: Claude Code installs them when it installs the plugin (it gives up after 60 s and runs no
+   install scripts; none are needed). Otherwise a SessionStart hook installs them in the
+   background into `${CLAUDE_PLUGIN_DATA}`, which survives updates, and the stages run from there.
+   Tried on a copy with nothing installed: the server ready in 0.1 s, the first check installing
+   and answering in 4 s (npm cache warm), a video check through the plugin in 16 s.
+   Still to do: the VS Code extension and the stores, the site page, then Codex; and deciding how
+   it shares Attentry's plumbing (a package Attentry publishes, a copy, or a split-out core).
 
 ## Others doing parts of this (2026-11-24)
 

@@ -5,11 +5,11 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { z } from "zod";
 import manifest from "../package.json" with { type: "json" };
-import { closeBrowser } from "./render.ts";
-import { closeRemotion } from "./remotion.ts";
-import { closeOcr } from "./lettering.ts";
-import { MAX_OPTIONS } from "./options.ts";
-import { parseSize, runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
+import { MAX_OPTIONS, parseSize } from "./limits.ts";
+import type { StageResult } from "./stages.ts";
+
+/** The stages, loaded on the first tool call (they need the heavy libraries; see core.ts). */
+export type Core = typeof import("./core.ts");
 
 const INSTRUCTIONS = `Attentry Design checks the illustrations and videos you make, without AI. It checks quality, never taste.
 - Before any options: get the words approved (the video's script, the picture's exact text). If the person gave none, draft them and show them for a yes before drawing.
@@ -65,10 +65,13 @@ const TOOLS = {
   },
 } as const;
 
-export function runMcpServer(project: string): void {
-  const call = async (run: () => Promise<StageResult>) => {
+export function runMcpServer(project: string, load: () => Promise<Core>): void {
+  // Loaded once; a failed load (the libraries couldn't be installed, say) is tried again next call.
+  let loading: Promise<Core> | undefined;
+  const core = () => (loading ??= load().catch((error) => { loading = undefined; throw error; }));
+  const call = async (run: (c: Core) => Promise<StageResult>) => {
     try {
-      return { content: [{ type: "text" as const, text: (await run()).text }] };
+      return { content: [{ type: "text" as const, text: (await run(await core())).text }] };
     } catch (error) {
       // A failed tool is a result the agent can read, not a broken connection.
       return { content: [{ type: "text" as const, text: `Attentry Design failed: ${(error as Error).message}` }], isError: true };
@@ -78,14 +81,15 @@ export function runMcpServer(project: string): void {
   const annotations = { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
   serveStdio(() => {
     const server = new McpServer({ name: "attentry-design", version: manifest.version ?? "0.0.0" }, { instructions: INSTRUCTIONS });
-    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call(() => runOptions(project, a.files, parseSize(a.size))));
-    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call(() => runLock(project, a.file, a.name, parseSize(a.size), a.style, a.words)));
-    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call(() => runCheck(project, a.file, a.lock, parseSize(a.size))));
-    server.registerTool("check_video_options", { ...TOOLS.check_video_options, annotations }, (a) => call(() => runVideoOptions(project, a.entry, a.compositions)));
-    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call(() => runVideoLock(project, a.entry, a.composition, a.name, a.style, a.words)));
-    server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call(() => runVideoCheck(project, a.entry, a.composition, a.lock)));
+    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call((c) => c.runOptions(project, a.files, parseSize(a.size))));
+    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call((c) => c.runLock(project, a.file, a.name, parseSize(a.size), a.style, a.words)));
+    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call((c) => c.runCheck(project, a.file, a.lock, parseSize(a.size))));
+    server.registerTool("check_video_options", { ...TOOLS.check_video_options, annotations }, (a) => call((c) => c.runVideoOptions(project, a.entry, a.compositions)));
+    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call((c) => c.runVideoLock(project, a.entry, a.composition, a.name, a.style, a.words)));
+    server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call((c) => c.runVideoCheck(project, a.entry, a.composition, a.lock)));
     return server;
   }, { onerror: (error) => process.stderr.write(`attentry-design mcp: ${error.message.replace(/\s+/g, " ").slice(0, 300)}\n`) });
-  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void Promise.all([closeBrowser(), closeRemotion(), closeOcr()]).finally(() => process.exit(0)));
-  process.stdin.on("close", () => void Promise.all([closeBrowser(), closeRemotion(), closeOcr()]));
+  const close = async () => { if (loading) await (await loading.catch(() => undefined))?.closeAll(); };
+  for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void close().finally(() => process.exit(0)));
+  process.stdin.on("close", () => void close());
 }

@@ -73,6 +73,14 @@ test("the hook answers only UserPromptSubmit design requests, as Claude Code exp
   assert.equal(await hookReply({ hook_event_name: "Stop" }), "");
 });
 
+test("the plugin's committed build matches the source (a GitHub install gets it as committed)", { timeout: 60_000 }, async () => {
+  const build = spawn(process.execPath, [join(import.meta.dirname, "..", "scripts", "build.mjs"), "--check"]);
+  let said = "";
+  build.stderr.on("data", (d) => (said += d));
+  const code = await new Promise((r) => build.on("close", r));
+  assert.equal(code, 0, said);
+});
+
 test("MCP: the six tools are listed and check_options answers with a contact sheet", { timeout: 60_000 }, async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   for (const f of ["invite-centered.svg", "invite-centered-again.svg"]) await copyFile(join(import.meta.dirname, "fixtures", f), join(project, f));
