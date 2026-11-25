@@ -15,24 +15,23 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { runHook } from "./hook.ts";
+import { hasRuntime, INSTALLING } from "./limits.ts";
 import { runMcpServer, type Core } from "./mcp.ts";
 
 const dist = dirname(fileURLToPath(import.meta.url));
 const root = join(dist, "..");
 const project = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
-const RUNTIME = ["sharp", "playwright-core", "tesseract.js", "@tesseract.js-data/eng"];
 const STALE = 10 * 60_000; // an install lock older than this was left by a crashed install
 
-const has = (dir: string) => RUNTIME.every((p) => existsSync(join(dir, "node_modules", p, "package.json")));
 const dataDir = () => process.env.CLAUDE_PLUGIN_DATA || join(homedir(), ".attentry-design", "runtime");
 const lockfile = (dir: string) => (existsSync(join(dir, "package-lock.json")) ? readFileSync(join(dir, "package-lock.json"), "utf8") : "");
 /** The data folder holds the libraries this version of the plugin asks for. */
-const current = (dir: string) => has(dir) && lockfile(dir) === lockfile(root);
+const current = (dir: string) => hasRuntime(dir) && lockfile(dir) === lockfile(root);
 
 /** Installs the libraries into `dir` with npm, exactly as the plugin's lockfile pins them. */
 async function install(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true });
-  const lock = join(dir, ".installing");
+  const lock = join(dir, INSTALLING);
   // One install at a time: another process (the SessionStart setup, a second session) may be on it.
   for (;;) {
     try {
@@ -58,7 +57,7 @@ async function install(dir: string): Promise<void> {
       npm.on("error", reject);
       npm.on("close", (c) => resolve(c ?? 1));
     }).catch(() => -1);
-    if (code !== 0 || !has(dir)) {
+    if (code !== 0 || !hasRuntime(dir)) {
       throw new Error(`Couldn't install Attentry Design's libraries (sharp, Playwright, tesseract.js) with npm into ${dir}. Is npm on the PATH? See ${join(dir, "install.log")}.`);
     }
   } finally {
@@ -68,7 +67,7 @@ async function install(dir: string): Promise<void> {
 
 /** The stages, from wherever their libraries are: next to the plugin, or in the data folder. */
 async function loadCore(): Promise<Core> {
-  if (has(root)) return import(pathToFileURL(join(dist, "core.mjs")).href);
+  if (hasRuntime(root)) return import(pathToFileURL(join(dist, "core.mjs")).href);
   const dir = dataDir();
   if (!current(dir)) await install(dir);
   // Node finds a module's packages from where the module is, so the stages run from the data folder.
@@ -80,7 +79,7 @@ async function loadCore(): Promise<Core> {
 
 /** SessionStart: get the libraries in place before the first design request. Says nothing. */
 async function setup(background: boolean): Promise<void> {
-  if (has(root) || current(dataDir())) return;
+  if (hasRuntime(root) || current(dataDir())) return;
   if (background) {
     // Detached, so the session starts now and the install carries on behind it.
     spawn(process.execPath, [fileURLToPath(import.meta.url), "setup"], { detached: true, stdio: "ignore", windowsHide: true }).unref();

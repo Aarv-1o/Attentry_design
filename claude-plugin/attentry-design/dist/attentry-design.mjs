@@ -8,18 +8,18 @@ var __export = (target, all) => {
 
 // src/plugin.ts
 import { spawn } from "node:child_process";
-import { createWriteStream, existsSync, readFileSync } from "node:fs";
-import { copyFile, mkdir, open as open2, readFile as readFile2, stat, unlink } from "node:fs/promises";
+import { createWriteStream, existsSync as existsSync2, readFileSync } from "node:fs";
+import { copyFile, mkdir as mkdir2, open as open2, readFile as readFile3, stat, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join as join2 } from "node:path";
+import { dirname, join as join4 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 // src/hook.ts
 import { text } from "node:stream/consumers";
 
 // src/brief.ts
-import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readdir, readFile as readFile2 } from "node:fs/promises";
+import { join as join3 } from "node:path";
 
 // node_modules/culori/src/rgb/parseNumber.js
 var parseNumber = (color, len) => {
@@ -3435,13 +3435,41 @@ var yiq = useMode(definition_default28);
 var LOCK_DIR = ".attentry-design";
 
 // src/limits.ts
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 var MAX_OPTIONS = 5;
+var RUNTIME = ["sharp", "playwright-core", "tesseract.js", "@tesseract.js-data/eng"];
+var hasRuntime = (dir) => RUNTIME.every((p4) => existsSync(join(dir, "node_modules", p4, "package.json")));
+var INSTALLING = ".installing";
 var STYLE_3D = /\b(3d|three[- ]d)\b/i;
 function parseSize(s) {
   if (!s) return {};
   const m = /^(\d+)x(\d+)$/.exec(s);
   if (!m) throw new Error("Give the size as WxH, like 1200x630.");
   return { width: Number(m[1]), height: Number(m[2]) };
+}
+
+// src/status.ts
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { join as join2 } from "node:path";
+var RUNNING = "running.json";
+var LAST_RUN = "last-run.json";
+var TASK = "task.json";
+var PIN = "pin.json";
+var path = (project2, name) => join2(project2, LOCK_DIR, name);
+async function readStatus(project2, name) {
+  try {
+    return JSON.parse(await readFile(path(project2, name), "utf8"));
+  } catch {
+    return void 0;
+  }
+}
+async function writeStatus(project2, name, value) {
+  await mkdir(join2(project2, LOCK_DIR), { recursive: true });
+  await writeFile(path(project2, name), JSON.stringify(value));
+}
+async function clearStatus(project2, name) {
+  await rm(path(project2, name), { force: true });
 }
 
 // src/brief.ts
@@ -3457,14 +3485,14 @@ function designKind(prompt) {
 }
 async function existingLocks(project2) {
   try {
-    return (await readdir(join(project2, LOCK_DIR))).filter((f3) => f3.endsWith(".lock.json")).map((f3) => f3.slice(0, -".lock.json".length));
+    return (await readdir(join3(project2, LOCK_DIR))).filter((f3) => f3.endsWith(".lock.json")).map((f3) => f3.slice(0, -".lock.json".length));
   } catch {
     return [];
   }
 }
 async function usesRemotion(project2) {
   try {
-    const pkg = JSON.parse(await readFile(join(project2, "package.json"), "utf8"));
+    const pkg = JSON.parse(await readFile2(join3(project2, "package.json"), "utf8"));
     return "remotion" in { ...pkg.dependencies, ...pkg.devDependencies };
   } catch {
     return false;
@@ -3494,8 +3522,11 @@ function styleNotes(prompt) {
   return STYLE_NOTES.filter(([re]) => re.test(prompt)).map(([, note]) => note).join(" ");
 }
 async function brief(prompt, project2) {
-  const kind = designKind(prompt);
-  if (!kind) return void 0;
+  const detected = designKind(prompt);
+  if (!detected) return void 0;
+  const pin = await readStatus(project2, PIN);
+  const kind = pin?.kind ?? detected;
+  await writeStatus(project2, TASK, { kind, at: Date.now(), pinned: !!pin }).catch(() => void 0);
   const tools = toolsFor(kind === "video" && await usesRemotion(project2));
   const locks = await existingLocks(project2);
   const lockLine = locks.length ? `This project has design locks: ${locks.join(", ")}. If the request continues one, skip to step 4 and check against it.` : "";
@@ -4410,10 +4441,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path) {
-  if (!path)
+function getElementAtPath(obj, path2) {
+  if (!path2)
     return obj;
-  return path.reduce((acc, key) => acc?.[key], obj);
+  return path2.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -4753,11 +4784,11 @@ function explicitlyAborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path, issues) {
+function prefixIssues(path2, issues) {
   return issues.map((iss) => {
     var _a3;
     (_a3 = iss).path ?? (_a3.path = []);
-    iss.path.unshift(path);
+    iss.path.unshift(path2);
     return iss;
   });
 }
@@ -5219,16 +5250,16 @@ function flattenError(error62, mapper = (issue2) => issue2.message) {
 }
 function formatError(error62, mapper = (issue2) => issue2.message) {
   const fieldErrors = { _errors: [] };
-  const processError = (error63, path = []) => {
+  const processError = (error63, path2 = []) => {
     for (const issue2 of error63.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path2, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path2, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path2, ...issue2.path]);
       } else {
-        const fullpath = [...path, ...issue2.path];
+        const fullpath = [...path2, ...issue2.path];
         if (fullpath.length === 0) {
           fieldErrors._errors.push(mapper(issue2));
         } else {
@@ -5267,17 +5298,17 @@ function formatError(error62, mapper = (issue2) => issue2.message) {
 }
 function treeifyError(error62, mapper = (issue2) => issue2.message) {
   const result = { errors: [] };
-  const processError = (error63, path = []) => {
+  const processError = (error63, path2 = []) => {
     var _a3;
     for (const issue2 of error63.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path2, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path2, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path2, ...issue2.path]);
       } else {
-        const fullpath = [...path, ...issue2.path];
+        const fullpath = [...path2, ...issue2.path];
         if (fullpath.length === 0) {
           result.errors.push(mapper(issue2));
           continue;
@@ -5316,8 +5347,8 @@ function treeifyError(error62, mapper = (issue2) => issue2.message) {
 }
 function toDotPath(_path) {
   const segs = [];
-  const path = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
-  for (const seg of path) {
+  const path2 = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
+  for (const seg of path2) {
     if (typeof seg === "number")
       segs.push(`[${seg}]`);
     else if (typeof seg === "symbol")
@@ -22455,13 +22486,13 @@ function resolveRef(ref, ctx) {
   if (!ref.startsWith("#")) {
     throw new Error("External $ref is not supported, only local refs (#/...) are allowed");
   }
-  const path = ref.slice(1).split("/").filter(Boolean);
-  if (path.length === 0) {
+  const path2 = ref.slice(1).split("/").filter(Boolean);
+  if (path2.length === 0) {
     return ctx.rootSchema;
   }
   const defsKey = ctx.version === "draft-2020-12" ? "$defs" : "definitions";
-  if (path[0] === defsKey) {
-    const key = path[1] === void 0 ? void 0 : decodeJSONPointerSegment(path[1]);
+  if (path2[0] === defsKey) {
+    const key = path2[1] === void 0 ? void 0 : decodeJSONPointerSegment(path2[1]);
     if (!key || !ctx.defs[key]) {
       throw new Error(`Reference not found: ${ref}`);
     }
@@ -26889,9 +26920,9 @@ var rev2026Codec = {
     });
     const parsed = buildSchemas2026().RequestMetaEnvelopeSchema.safeParse(meta3);
     if (!parsed.success) for (const issue2 of parsed.error.issues) {
-      const path = issue2.path.map(String);
-      const key = path.length > 0 ? path.join(".") : "_meta";
-      if (path.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
+      const path2 = issue2.path.map(String);
+      const key = path2.length > 0 ? path2.join(".") : "_meta";
+      if (path2.length === 1 && issues.some((existing) => existing.key === key && existing.problem === "missing")) continue;
       issues.push({
         key,
         problem: issue2.message
@@ -27218,17 +27249,17 @@ function scanXMcpHeaderDeclarations(inputSchema) {
   const declarations = [];
   const seenLower = /* @__PURE__ */ new Map();
   let numberFault;
-  const visit2 = (node2, path, reachable) => {
+  const visit2 = (node2, path2, reachable) => {
     if (node2 === null || typeof node2 !== "object") return void 0;
     const schema = node2;
     if (X_MCP_HEADER_KEY in schema) {
-      if (!reachable || path.length === 0) return `${pathName(path)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
+      if (!reachable || path2.length === 0) return `${pathName(path2)}: x-mcp-header is only permitted on properties statically reachable via a chain of 'properties' keys (not under items, additionalProperties, oneOf/anyOf/allOf/not, if/then/else, or $ref)`;
       const raw = schema[X_MCP_HEADER_KEY];
-      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path)}: x-mcp-header MUST be a non-empty string`;
-      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
+      if (typeof raw !== "string" || raw.length === 0) return `${pathName(path2)}: x-mcp-header MUST be a non-empty string`;
+      if (!RFC9110_TOKEN.test(raw)) return `${pathName(path2)}: x-mcp-header '${raw}' is not a valid RFC 9110 token (no spaces, control characters or HTTP delimiters)`;
       const type = typeof schema.type === "string" ? schema.type : void 0;
       if (type === void 0 || !PERMITTED_X_MCP_HEADER_TYPES.has(type)) {
-        const fault$1 = `${pathName(path)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
+        const fault$1 = `${pathName(path2)}: x-mcp-header is only permitted on primitive-typed properties (string, integer, boolean); got ${type ?? "<none>"}`;
         if (type !== "number") return fault$1;
         numberFault ??= fault$1;
       }
@@ -27237,14 +27268,14 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (prior !== void 0) return `x-mcp-header '${raw}' is not case-insensitively unique (also declared as '${prior}')`;
       seenLower.set(lower, raw);
       declarations.push({
-        path,
+        path: path2,
         headerName: raw,
         type
       });
     }
     const properties = schema.properties;
     if (properties !== null && typeof properties === "object") for (const [key, child] of Object.entries(properties)) {
-      const fault$1 = visit2(child, [...path, key], reachable);
+      const fault$1 = visit2(child, [...path2, key], reachable);
       if (fault$1 !== void 0) return fault$1;
     }
     for (const k4 of NON_REACHABLE_SUBSCHEMA_KEYWORDS) {
@@ -27252,7 +27283,7 @@ function scanXMcpHeaderDeclarations(inputSchema) {
       if (sub === void 0) continue;
       const branches = Array.isArray(sub) ? sub : sub !== null && typeof sub === "object" && OBJECT_VALUED_SUBSCHEMA_KEYWORDS.has(k4) ? Object.values(sub) : [sub];
       for (const branch of branches) {
-        const fault$1 = visit2(branch, [...path, `<${k4}>`], false);
+        const fault$1 = visit2(branch, [...path2, `<${k4}>`], false);
         if (fault$1 !== void 0) return fault$1;
       }
     }
@@ -27297,8 +27328,8 @@ var OBJECT_VALUED_SUBSCHEMA_KEYWORDS = /* @__PURE__ */ new Set([
   "$defs",
   "definitions"
 ]);
-function pathName(path) {
-  return path.length === 0 ? "<root>" : path.join(".");
+function pathName(path2) {
+  return path2.length === 0 ? "<root>" : path2.join(".");
 }
 var HEADER_MISMATCH_ERROR_CODE = -32020;
 var INBOUND_VALIDATION_LADDER = [
@@ -27590,7 +27621,7 @@ var PROPERTY_KEYS_BY_TYPE = {
   array: shapeKeys([UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema])
 };
 var SUPPORTED_STRING_FORMATS = new Set(StringSchemaSchema.shape.format.unwrap().options);
-function walkProperty(node2, path, vendor, unsupported) {
+function walkProperty(node2, path2, vendor, unsupported) {
   if (!isJsonObject(node2)) return node2;
   const allowedKeys = typeof node2.type === "string" && Object.hasOwn(PROPERTY_KEYS_BY_TYPE, node2.type) ? PROPERTY_KEYS_BY_TYPE[node2.type] : void 0;
   if (allowedKeys === void 0) return node2;
@@ -27598,8 +27629,8 @@ function walkProperty(node2, path, vendor, unsupported) {
   for (const [key, value] of Object.entries(node2)) if (allowedKeys.has(key) || isAnnotationOnlyJsonSchemaKeyword(key)) pruned[key] = value;
   else if (key === "pattern" && node2.type === "string" && typeof node2.format === "string") {
     if (!SUPPORTED_STRING_FORMATS.has(node2.format)) pruned[key] = value;
-    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path}.${key}`);
-  } else unsupported.push(`${path}.${key}`);
+    else if (typeof value !== "string" || !isLibraryFormatPattern(node2.format, value, vendor)) unsupported.push(`${path2}.${key}`);
+  } else unsupported.push(`${path2}.${key}`);
   return pruned;
 }
 function walkRequestedSchema(converted, vendor) {
@@ -27616,11 +27647,11 @@ function describeUnsupportedProperties(pruned, fallback) {
   const offenders = Object.entries(pruned.properties).filter(([, node2]) => !parseSchema(PrimitiveSchemaDefinitionSchema, node2).success).map(([name]) => `properties.${name}`);
   return offenders.length > 0 ? offenders.join(", ") : fallback;
 }
-function findDroppedConstraintPaths(original, parsed, path = "") {
-  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path}[${index}]`));
+function findDroppedConstraintPaths(original, parsed, path2 = "") {
+  if (Array.isArray(original) && Array.isArray(parsed)) return original.flatMap((item, index) => findDroppedConstraintPaths(item, parsed[index], `${path2}[${index}]`));
   if (!isJsonObject(original) || !isJsonObject(parsed)) return [];
   return Object.entries(original).flatMap(([key, value]) => {
-    const childPath = path ? `${path}.${key}` : key;
+    const childPath = path2 ? `${path2}.${key}` : key;
     if (!Object.prototype.hasOwnProperty.call(parsed, key)) return isAnnotationOnlyJsonSchemaKeyword(key) ? [] : [childPath];
     return findDroppedConstraintPaths(value, parsed[key], childPath);
   });
@@ -31761,8 +31792,8 @@ var require_utils = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     for (let i = 0; i < str.length; i++) if (str[i] === token) ind++;
     return ind;
   }
-  function removeDotSegments(path) {
-    let input2 = path;
+  function removeDotSegments(path2) {
+    let input2 = path2;
     const output2 = [];
     let nextSlash = -1;
     let len = 0;
@@ -32100,8 +32131,8 @@ var require_schemes = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     }
     if (wsComponent.resourceName) {
       const queryIndex = wsComponent.resourceName.indexOf("?");
-      const path = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
-      wsComponent.path = path && path !== "/" ? path : void 0;
+      const path2 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
+      wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
       wsComponent.query = queryIndex === -1 ? void 0 : wsComponent.resourceName.slice(queryIndex + 1);
       wsComponent.resourceName = void 0;
     }
@@ -38738,22 +38769,26 @@ function runMcpServer(project2, load) {
     loading = void 0;
     throw error62;
   });
-  const call = async (run) => {
+  const call = async (tool, lock, run) => {
     try {
+      await writeStatus(project2, RUNNING, { tool, started: Date.now(), ...lock ? { lock } : {} });
       return { content: [{ type: "text", text: (await run(await core())).text }] };
     } catch (error62) {
       return { content: [{ type: "text", text: `Attentry Design failed: ${error62.message}` }], isError: true };
+    } finally {
+      await clearStatus(project2, RUNNING);
+      await writeStatus(project2, LAST_RUN, { tool, finished: Date.now(), ...lock ? { lock } : {} });
     }
   };
   const annotations = { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
   serveStdio(() => {
     const server = new McpServer({ name: "attentry-design", version: package_default.version ?? "0.0.0" }, { instructions: INSTRUCTIONS });
-    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call((c2) => c2.runOptions(project2, a.files, parseSize(a.size))));
-    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call((c2) => c2.runLock(project2, a.file, a.name, parseSize(a.size), a.style, a.words)));
-    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call((c2) => c2.runCheck(project2, a.file, a.lock, parseSize(a.size))));
-    server.registerTool("check_video_options", { ...TOOLS.check_video_options, annotations }, (a) => call((c2) => c2.runVideoOptions(project2, a.entry, a.compositions)));
-    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call((c2) => c2.runVideoLock(project2, a.entry, a.composition, a.name, a.style, a.words)));
-    server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call((c2) => c2.runVideoCheck(project2, a.entry, a.composition, a.lock)));
+    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call("check_options", void 0, (c2) => c2.runOptions(project2, a.files, parseSize(a.size))));
+    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call("lock_design", a.name, (c2) => c2.runLock(project2, a.file, a.name, parseSize(a.size), a.style, a.words)));
+    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call("check_design", a.lock, (c2) => c2.runCheck(project2, a.file, a.lock, parseSize(a.size))));
+    server.registerTool("check_video_options", { ...TOOLS.check_video_options, annotations }, (a) => call("check_video_options", void 0, (c2) => c2.runVideoOptions(project2, a.entry, a.compositions)));
+    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call("lock_video", a.name, (c2) => c2.runVideoLock(project2, a.entry, a.composition, a.name, a.style, a.words)));
+    server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call("check_video", a.lock, (c2) => c2.runVideoCheck(project2, a.entry, a.composition, a.lock)));
     return server;
   }, { onerror: (error62) => process.stderr.write(`attentry-design mcp: ${error62.message.replace(/\s+/g, " ").slice(0, 300)}
 `) });
@@ -38766,17 +38801,15 @@ function runMcpServer(project2, load) {
 
 // src/plugin.ts
 var dist = dirname(fileURLToPath(import.meta.url));
-var root = join2(dist, "..");
+var root = join4(dist, "..");
 var project = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
-var RUNTIME = ["sharp", "playwright-core", "tesseract.js", "@tesseract.js-data/eng"];
 var STALE = 10 * 6e4;
-var has = (dir) => RUNTIME.every((p4) => existsSync(join2(dir, "node_modules", p4, "package.json")));
-var dataDir = () => process.env.CLAUDE_PLUGIN_DATA || join2(homedir(), ".attentry-design", "runtime");
-var lockfile = (dir) => existsSync(join2(dir, "package-lock.json")) ? readFileSync(join2(dir, "package-lock.json"), "utf8") : "";
-var current = (dir) => has(dir) && lockfile(dir) === lockfile(root);
+var dataDir = () => process.env.CLAUDE_PLUGIN_DATA || join4(homedir(), ".attentry-design", "runtime");
+var lockfile = (dir) => existsSync2(join4(dir, "package-lock.json")) ? readFileSync(join4(dir, "package-lock.json"), "utf8") : "";
+var current = (dir) => hasRuntime(dir) && lockfile(dir) === lockfile(root);
 async function install(dir) {
-  await mkdir(dir, { recursive: true });
-  const lock = join2(dir, ".installing");
+  await mkdir2(dir, { recursive: true });
+  const lock = join4(dir, INSTALLING);
   for (; ; ) {
     try {
       await (await open2(lock, "wx")).close();
@@ -38791,8 +38824,8 @@ async function install(dir) {
   }
   try {
     if (current(dir)) return;
-    for (const f3 of ["package.json", "package-lock.json"]) await copyFile(join2(root, f3), join2(dir, f3));
-    const log = createWriteStream(join2(dir, "install.log"));
+    for (const f3 of ["package.json", "package-lock.json"]) await copyFile(join4(root, f3), join4(dir, f3));
+    const log = createWriteStream(join4(dir, "install.log"));
     const code = await new Promise((resolve, reject) => {
       const npm = spawn("npm ci --omit=dev --ignore-scripts --no-audit --no-fund", { cwd: dir, shell: true });
       npm.stdout.pipe(log);
@@ -38800,8 +38833,8 @@ async function install(dir) {
       npm.on("error", reject);
       npm.on("close", (c2) => resolve(c2 ?? 1));
     }).catch(() => -1);
-    if (code !== 0 || !has(dir)) {
-      throw new Error(`Couldn't install Attentry Design's libraries (sharp, Playwright, tesseract.js) with npm into ${dir}. Is npm on the PATH? See ${join2(dir, "install.log")}.`);
+    if (code !== 0 || !hasRuntime(dir)) {
+      throw new Error(`Couldn't install Attentry Design's libraries (sharp, Playwright, tesseract.js) with npm into ${dir}. Is npm on the PATH? See ${join4(dir, "install.log")}.`);
     }
   } finally {
     await unlink(lock).catch(() => {
@@ -38809,16 +38842,16 @@ async function install(dir) {
   }
 }
 async function loadCore() {
-  if (has(root)) return import(pathToFileURL(join2(dist, "core.mjs")).href);
+  if (hasRuntime(root)) return import(pathToFileURL(join4(dist, "core.mjs")).href);
   const dir = dataDir();
   if (!current(dir)) await install(dir);
-  const here = join2(dir, "core.mjs");
-  const built = await readFile2(join2(dist, "core.mjs"));
-  if (!existsSync(here) || !built.equals(await readFile2(here))) await copyFile(join2(dist, "core.mjs"), here);
+  const here = join4(dir, "core.mjs");
+  const built = await readFile3(join4(dist, "core.mjs"));
+  if (!existsSync2(here) || !built.equals(await readFile3(here))) await copyFile(join4(dist, "core.mjs"), here);
   return import(pathToFileURL(here).href);
 }
 async function setup(background) {
-  if (has(root) || current(dataDir())) return;
+  if (hasRuntime(root) || current(dataDir())) return;
   if (background) {
     spawn(process.execPath, [fileURLToPath(import.meta.url), "setup"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
     return;

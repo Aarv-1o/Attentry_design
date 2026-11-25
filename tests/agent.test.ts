@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, mkdir, writeFile, copyFile, access } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, copyFile, access, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
@@ -113,6 +113,9 @@ test("MCP: the six tools are listed and check_options answers with a contact she
     assert.match(text, /^Contact sheet: \.attentry-design\/sheets\/options-\d+\.png/);
     assert.match(text, /nearly the same picture/);
     await access(join(project, text.split("\n")[0].slice("Contact sheet: ".length)));
+    // The running marker the editor panel watches is gone once the tool has answered.
+    await assert.rejects(access(join(project, ".attentry-design", "running.json")));
+    assert.equal(JSON.parse(await readFile(join(project, ".attentry-design", "last-run.json"), "utf8")).tool, "check_options");
 
     const tooMany = (await ask("tools/call", { name: "check_options", arguments: { files: ["a", "b", "c", "d", "e", "f"] } })).result;
     assert.equal(tooMany.isError, true);

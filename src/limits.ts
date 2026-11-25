@@ -1,8 +1,16 @@
 // Small shared pieces that need none of the heavy libraries, so the brief hook and the MCP server
 // can use them before sharp, Playwright and tesseract.js are installed.
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { RenderOptions } from "./render.ts";
 
 export const MAX_OPTIONS = 5;
+
+/** The heavy libraries the stages need, installed beside the plugin or in its data folder. */
+export const RUNTIME = ["sharp", "playwright-core", "tesseract.js", "@tesseract.js-data/eng"];
+export const hasRuntime = (dir: string) => RUNTIME.every((p) => existsSync(join(dir, "node_modules", p, "package.json")));
+/** In the data folder while an install runs (one at a time). */
+export const INSTALLING = ".installing";
 
 /** A request or lock naming the 3D look. */
 export const STYLE_3D = /\b(3d|three[- ]d)\b/i;

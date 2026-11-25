@@ -5,6 +5,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { LOCK_DIR } from "./lock.ts";
 import { MAX_OPTIONS, STYLE_3D } from "./limits.ts";
+import { PIN, readStatus, TASK, writeStatus, type Pin } from "./status.ts";
 
 export type DesignKind = "illustration" | "video";
 
@@ -73,8 +74,13 @@ export function styleNotes(prompt: string): string {
 }
 
 export async function brief(prompt: string, project: string): Promise<string | undefined> {
-  const kind = designKind(prompt);
-  if (!kind) return undefined;
+  const detected = designKind(prompt);
+  if (!detected) return undefined;
+  // A kind the person pinned in the editor wins over the guess, for requests that are design ones.
+  const pin = await readStatus<Pin>(project, PIN);
+  const kind = pin?.kind ?? detected;
+  // Only for the editor's panel: a folder that can't be written must never cost the person the brief.
+  await writeStatus(project, TASK, { kind, at: Date.now(), pinned: !!pin }).catch(() => undefined);
   const tools = toolsFor(kind === "video" && (await usesRemotion(project)));
   const locks = await existingLocks(project);
   const lockLine = locks.length
