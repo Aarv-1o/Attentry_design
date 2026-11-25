@@ -26,7 +26,7 @@ const COMPOSITION = z.string().min(1).max(200).describe("A composition id, as in
 const STYLE = z.string().max(60).optional()
   .describe('The world style the person chose: "stick figure", "flat 2D", "3D", "pixel art", or their own words. A pixel-art lock is checked for pixel-sharp edges.');
 const WORDS = z.array(z.string().min(1).max(500)).max(60).optional()
-  .describe("The words the person approved, one line each: the video's script (every caption, in order, with its time as "line | 3s") or the picture's exact text (headline, labels). The check holds the finished design to them: every line there, in order, for its time.");
+  .describe("The words the person approved, one line each: the video's script (every caption, in order, with its time as 'line | 3s') or the picture's exact text (headline, labels). The check holds the finished design to them: every line there, in order, for its time.");
 const NAME = z.string().regex(/^[\w-]{1,60}$/, "Letters, digits, - and _ only.").describe('A short name for the lock, like "invitation".');
 
 const TOOLS = {
