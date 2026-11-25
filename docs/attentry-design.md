@@ -192,5 +192,4 @@ Written by hand, because no library fits: the diversity report, the subject-posi
 
 - Name in the stores and on the site.
 - How it takes Attentry's plumbing (step 4).
-- HTML/CSS illustrations need a browser to render: in step 1, or after?
 - Vertical video safe areas from day one, or 16:9 first?

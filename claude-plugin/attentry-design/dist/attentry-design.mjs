@@ -38645,7 +38645,7 @@ function toError(value) {
 // package.json
 var package_default = {
   name: "attentry-design",
-  version: "0.0.1",
+  version: "0.1.0",
   private: true,
   license: "MIT",
   type: "module",
