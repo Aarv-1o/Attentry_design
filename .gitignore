@@ -3,3 +3,6 @@ node_modules/
 *.log
 .attentry-design/
 __pycache__/
+# The extension's build: the bundle and the plugin marketplace it carries.
+editors/vscode/dist/
+editors/vscode/claude/

@@ -1,0 +1,115 @@
+/* The editor's own colors and font, so the panel looks like part of VS Code in any theme. */
+body {
+  padding: 4px 14px 16px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  line-height: 1.45;
+}
+section { margin: 12px 0 18px; }
+h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground));
+}
+p { margin: 0 0 6px; }
+.line { display: flex; gap: 8px; align-items: baseline; }
+.mark { width: 1em; flex: none; text-align: center; }
+.good .mark { color: var(--vscode-testing-iconPassed, #3fb950); }
+.bad .mark { color: var(--vscode-errorForeground); }
+.hint, .muted, .source { color: var(--vscode-descriptionForeground); }
+.row { display: flex; gap: 6px; margin-top: 6px; }
+
+button {
+  font: inherit;
+  border: none;
+  border-radius: 2px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+button.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+button.primary:hover { background: var(--vscode-button-hoverBackground); }
+button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+button.link { background: none; padding: 0; color: var(--vscode-textLink-foreground); text-align: left; }
+button.link:hover { text-decoration: underline; }
+button.small { font-size: 12px; }
+button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+
+.command {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 2px;
+  background: var(--vscode-textCodeBlock-background);
+  font-family: var(--vscode-editor-font-family);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.working {
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
+  background: var(--vscode-editorWidget-background);
+}
+.tip { margin-top: 8px; }
+.tip p:first-child { margin-bottom: 4px; }
+.source { font-size: 12px; font-style: italic; }
+.spinner {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  align-self: center;
+  border: 2px solid var(--vscode-progressBar-background);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.locks { list-style: none; margin: 0; padding: 0; }
+.lock { padding: 8px 0; border-top: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent)); }
+.lock:first-child { border-top: none; padding-top: 0; }
+.lock .name { font-weight: 600; margin-bottom: 2px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
+.swatch { width: 16px; height: 16px; border-radius: 2px; outline: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.35)); }
+.words { overflow-wrap: anywhere; }
+
+.folder { display: flex; gap: 8px; align-items: center; margin: 8px 0 4px; }
+.folder select {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  font: inherit;
+}
+.segments { display: flex; margin-bottom: 6px; }
+.seg {
+  flex: 1;
+  padding: 3px 6px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border-radius: 0;
+}
+.seg:first-child { border-radius: 2px 0 0 2px; }
+.seg:last-child { border-radius: 0 2px 2px 0; }
+.seg.on { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.setup summary { cursor: pointer; list-style-position: outside; }
+.setup summary h2 { display: inline; }
+.setup[open] summary { margin-bottom: 8px; }
+.good.small { font-size: 12px; color: var(--vscode-testing-iconPassed, #3fb950); }
+.title { display: flex; gap: 8px; align-items: baseline; margin-bottom: 2px; }
+.badge {
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
