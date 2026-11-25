@@ -87,6 +87,9 @@ are suggestions, a few at most per check.
 | Values scattered, or bunched mid-grey (Loomis, Gurney) | default | render |
 | Saturation high over most of the frame; all three primaries raw (Loomis) | default | render |
 | Too smooth: flat fills only, no texture (Goree, Loomis, Gurney) | default | source + render |
+| Murk: nothing reaches a light value (Birn) | default | render |
+| Banding: a gradient in visible steps (Birn) | default | render |
+| Clipping: shading blown to white or crushed to black, 3D-look lock (Birn) | default | render |
 
 **Video** (from attentry-design-rules.md, measured on rendered frames and the source): text shown
 too briefly, too small, low contrast, outside the safe area; a still shot; text changing during a
@@ -105,6 +108,14 @@ Added 2026-11-24 from the style books: the brief offers five styles (hand-drawn,
 isometric, 3D look, pixel art) with a craft note for the one named; Roam's <6><6> rule (draw a
 process as a flow, a sequence as a timeline); a mixels check for pixel-art locks; a reader test and
 phone-size check for text.
+
+Added 2026-11-25 from Birn's *Digital Lighting & Rendering*: a craft note for the 3D look (key and
+fill, contact shadows, bevels, highlights), and three suggestions from its exposure chapter:
+murk (under 1% of the picture reaches a light value; for a video, over half the frames), clipping
+(over 3% blown to pure white or crushed to pure black, background aside, with a 3D-look lock) and
+banding (a staircase of four or more wide, faint, same-way color steps across over 15% of the
+rows or columns). Chrome dithers SVG and CSS gradients, so banding comes from raster images and
+"gradients" drawn as stacked stripes.
 
 Later: hot skin and two eye levels in generated images, OCR on video frames, more direction
 cards, copy.

@@ -1860,6 +1860,170 @@ Your Own Pixel Art.)
   "look robotic or 'tweened'" (p. 229); work on strong key frames first (p. 221). **Context:** with
   The Illusion of Life and Richard Williams for the video rules.
 
+## Jeremy Birn, *Digital Lighting & Rendering* (1st edition, 2000; read 2026-11-25)
+
+For the 3D look. A scan, OCR'd with tools/ocr_book.py; read once in full, then every passage cited
+here re-checked against the text. Printed pages. The 1st edition, not the 3rd: its software notes
+(depth-map shadows, 2000-era renderers) are dated, but the lighting, color and exposure craft is
+the same. It works for code-drawn 3D too (SVG gradients, CSS, three.js): it is about what light does
+on a surface, not about which buttons to press.
+
+**The thesis.**
+
+- **"If it looks like computer graphics, it is not good computer graphics"** (p. 7). A well-lit
+  rendering doesn't call attention to the technology. **Context:** the 3D look's version of "looks
+  like AI"; every point below is a way a render gives itself away.
+- **Look at the result** (p. 29): "No amount of knowledge or estimation can replace visually
+  inspecting your results." Lighting is "5% setting up and 95% revisions" (p. 20). **Context:**
+  supports the LOOK line after every check.
+
+**Light: model the form** (ch. 3).
+
+- **Bright is not well lit** (pp. 35–38): even, frontal light flattens a form (the on-camera flash
+  look); each plane of a surface needs its own value. Flat "ambient" fill makes "flat, dead spaces"
+  where neighboring planes look the same (p. 38). **Direction:** shade every face a different value;
+  no flat side filled with one tone. **Rule idea (3D look):** a large object region of one flat
+  value, beside shaded regions.
+- **The key light** (pp. 41–46): above the subject and 15–45° to the side of the camera is the
+  "happy medium" (p. 45). Light from below reads as horror unless a fire or lantern motivates it
+  (p. 43); light from too high hides the eyes (p. 44). **Direction.**
+- **The fill** (pp. 47–50): from the generally opposite side and lower than the key, overlapping it
+  so the shading is continuous; never the exact mirror of the key: "An unnatural degree of symmetry
+  is a problem in computer graphics in general" (p. 50). **Direction.**
+- **Key-to-fill ratio is the contrast** (pp. 50–54): 2:1 to 4:1 for bright, cheerful work
+  (comedy, children's programs, TV); 8:1 and more for drama and night; below 2:1 the fill
+  flattens the form (p. 52). "You can actually build a greater sense of darkness through contrast
+  than through underexposure" (p. 54): a dark scene keeps some areas well lit. **Direction**, and
+  **Rule idea:** the lit side against the shadow side of the main subject, as a ratio.
+- **Backlight is optional in color** (p. 55): it separates a subject from a background of the same
+  value; in color, contrast often does that already. **Direction.**
+
+**Shadows** (ch. 4).
+
+- **What shadows do** (pp. 63–66): place objects in space (a ball without a shadow floats, p. 68),
+  show a new angle, break up a plain surface, add contrast between similar tones, show what's off
+  screen, tie unlikely elements together. **Direction:** every object standing on something gets a
+  contact shadow.
+- **One direction, little clutter** (p. 69): many shadows heading different ways add "distracting
+  lines" and give away the number of lights. **Rule idea:** cast shadows that point different ways
+  (from code-drawn shapes: shadow offsets with different signs).
+- **Leaving shadows out is a style** (pp. 69–70): hand-drawn work often has none; removing them
+  gives "a cleaner, punchier, slightly more 'illustrated' look". **Context:** the shadow rules
+  belong to the 3D look only.
+- **The shadow area is one area** (pp. 71–75): darkness has no source, so a cast shadow and the
+  unlit side of an object read as one area and must match in value; lightening only the cast
+  shadow looks wrong (p. 73). A fill colored against the key (blue fill, yellow key) makes shadows
+  "richer and more interesting" (p. 75). **Direction.**
+- **Hard shadows are the cliché** (p. 80): "Crisp, hard-edged shadows are a convenient cliche in
+  computer graphics"; real shadows soften with the size of the light and with distance from the
+  object that casts them (sharp at the contact point, softer further away). **Direction.**
+
+**Qualities of light** (ch. 5).
+
+- **Five qualities** (p. 89): softness, intensity, color, throw (its pattern: dappled, blinds,
+  lampshade arcs), animation (flicker, moving headlights). **Direction:** decide each one for the
+  scene's light.
+- **Soft light** (pp. 91–95): for overcast, indirect and inviting scenes, favorable portraits, "and
+  less like computer graphics". Its cues: broad highlights, no tight specular spots, no hard cutoff
+  at the edge of the light (p. 95). Hard light for a clear sun, a bare bulb, space, harsh places.
+- **More than one color of light** (p. 103): even one light picks up the colors around it; a single
+  pure white light looks synthetic. **Direction.**
+
+**Color** (ch. 6).
+
+- **Too saturated is the common mistake** (p. 118): "slightly polluted and slightly diluted" colors
+  look more real. **Context:** agrees with the saturation check (Loomis).
+- **A color scheme, not colors at random** (pp. 118–119): a small set reused across the scene ties
+  it together. **Exclusivity** (p. 120): an accent pops when it appears in one area only; washing
+  the scene in that color kills it. **Rule idea:** the accent hue spread over many separate regions.
+- **Depth cues** (pp. 123–125): warm and saturated come forward, cool and grey recede; distance
+  desaturates. **Darkness** (pp. 125–126): desaturate, and use a dim blue fill to keep it readable.
+  The most saturated colors exist only at middle values (p. 127). **Direction.**
+- **Light colors are relative** (pp. 130–135): pick a color balance first; then the sun is warmer
+  and the sky fill cooler than it (Birn's daylight example: sun 222,198,175; sky 72,153,210; plus a
+  green bounce from the lawn). **Direction:** warm key, cool fill, a bounce in the ground's color.
+- **No pure RGB** (pp. 142–143): a pure green light on pure colors looks digital; "pollute" every
+  value with a little of each channel. **Rule idea:** large areas at pure #f00, #0f0, #00f.
+- **"The most common sin is neglect"** (p. 146). **Context.**
+
+**Exposure: what the histogram shows** (ch. 7). The most measurable chapter: Attentry Design
+already renders the picture, so the histogram is free.
+
+- **Overexposure** (pp. 150–151): only light tones, no darks; usually too many lights or lights
+  spilling everywhere.
+- **Underexposure and "student murk"** (pp. 152–153): only the darkest part of the palette;
+  "darkness is a convenient way to hide their mistakes", like hiding bad spelling with illegible
+  handwriting. A glow or lens flare can make a murky picture look exposed in the histogram while
+  the subject stays unlit (p. 153). **Rule idea (all styles):** no light tones anywhere (the
+  brightest few percent of the picture still dark grey), as distinct from a dark field with a lit
+  subject. **Context:** matches the baseline: AI videos averaged brightness 50 against the pros'
+  238.
+- **Banding** (pp. 153–154): visible steps instead of a smooth gradient, gaps in the histogram;
+  worst in dark, stretched gradients. Fixes: expose properly, add texture, tint lights, dither.
+  **Rule idea:** steps in a large gradient area (code-drawn gradients are the classic case).
+- **Low and high contrast** (pp. 155–156): one narrow band of tones looks faded, and is fine only
+  on purpose (fog, nostalgia, a background under text); only black and white loses the form.
+  **Context:** the mid-grey check covers the faded case.
+- **Clipping** (pp. 157–158): areas blown to pure white or crushed to pure black lose their shading.
+  **Rule idea (3D look):** a sizeable blown-out area on the subject.
+- **Motion blur** (p. 165): a shutter of 0.5–0.75 looks natural; too little looks jerky, too much
+  smears. **Context:** for video.
+
+**Composition and the camera** (ch. 8).
+
+- **Use the depth** (pp. 173–174): "Take advantage of the 3D space available... instead of lining
+  up all of your characters the same distance from the camera!" Close-ups and reaction shots carry
+  the human side (p. 173). **Direction.**
+- **Angles and perspective** (pp. 176–180): keep to one side of the line of action; low angles make
+  a subject bigger, high angles smaller and weaker (p. 178); a camera close with a wide lens
+  exaggerates depth, a far one flattens it (p. 179). **Direction.**
+- **Camera moves** (pp. 182–183): "one of the most overused techniques in 3D animation"; move only
+  when the story motivates it, let the subject start before the camera follows, and start and end
+  on a well-composed still frame. Never lock the camera to the center of a moving subject (p. 183,
+  a warning box). **Rule idea (video):** a camera move with no hold before or after it.
+- **Framing** (pp. 183–186): dead center "generally produces a bad composition" (agrees with the
+  existing check). Look space: leave room in the direction a character faces, or the frame feels
+  cropped and the pose reads differently (pp. 184–185). Graphic weight: bold color and contrast
+  draw the eye, more so near the edge (p. 185). **Context:** Birn teaches the rule of thirds
+  (p. 183); we still don't score it (decided with Gurney's eye-tracking).
+- **Safe areas** (p. 190): text inside the central 80% (title safe), action inside 90%. **Context:**
+  stricter than the 5% margin; a TV standard, kept for reference.
+
+**Materials** (ch. 9).
+
+- **No perfectly diffuse surface** (pp. 195–196): add at least a little specularity. **But**
+  "big, bright airbrushed-looking specular highlights are one of the most conspicuous cliches of
+  3D graphics" (p. 197): highlight size follows the size and distance of the light, small and tight
+  for metal and glass, broad and dim for paper and painted wood. Highlights are white or grey (the
+  light's color), except on metal, which tints them its own color (p. 198). **Direction.**
+- **Fresnel** (pp. 199–200): surfaces reflect more at glancing angles: water seen from above is
+  clear, seen level is a mirror. **Direction:** with the water card.
+- **Bevel everything** (pp. 28, 202): razor-sharp edges never catch light; a small bevel gives the
+  edge a highlight and makes the form read. **Direction.**
+- **Surface colors** (pp. 205–206): a color map carries no lighting of its own, and its values stay
+  between about 15% and 85%: pure white or pure black surfaces don't exist. **Rule idea (3D
+  look):** object surfaces at pure white or pure black.
+- **Texture** (pp. 223–229): mismatched texture scale is "one of the most common flaws" (p. 223);
+  specific textures beat generic ones (p. 224); repeating features show the tile (p. 227). "Use dirt
+  to add 'signal' not 'noise'" (p. 229): wear where something caused it (paths, corners, drips),
+  never random noise laid over everything; and dirt isn't all dark. **Direction:** against the AI
+  noise overlay.
+- **Hand-painted maps** (pp. 213–215): a stylized 3D scene can carry painted light and shadow in its
+  textures. **Context:** stylized 3D may break the realism notes on purpose.
+- **Reflections and glass need surroundings** (pp. 234, 237): a reflective or transparent object in
+  empty black space only gets darker. **Direction.**
+
+**Effects** (chs. 9–10).
+
+- **Optical effects** (p. 266): "if you don't want your work to look like a computer graphics demo,
+  you are usually best off to avoid conspicuous optical effects" (lens flares, light streaks,
+  glows). Caustics "run the risk of appearing cheesy if overused" (p. 247). **Direction**, and with
+  the murk note: a glow is no substitute for light on the subject.
+
+**One contrast with our stages.** Birn advises professionals never to show a client several versions
+to choose from unless the schedule allows more rounds (p. 32). Our stage 2 differs on purpose: the
+options are small and come before any finished work, so choosing costs little. **Context.**
+
 ---
 
 ## What the style books change
@@ -1884,5 +2048,12 @@ Your Own Pixel Art.)
    touching an edge read as a mistake; a clear gap or a clear overlap fixes it. The brief asks for
    it, and check_design now flags text that almost touches the edge of the card or bubble it sits
    in (a suggestion).
-7. **Still missing for the five styles:** books on isometric and on the 3D look; Stanchfield's
-   *Drawn to Life* for the hand-drawn figures.
+7. **The 3D look has a craft note now** (Birn, read 2026-11-25): one key light above and to the
+   side, a dimmer fill from the other side and never mirrored, every face its own value, contact
+   shadows all one way and soft, bevels, small highlights in the light's color, warm key and cool
+   fill. The brief gives it when the request names 3D.
+8. **The histogram is a free check** (Birn ch. 7): murk (no light tones anywhere), clipping and
+   banding are readable from the render Attentry Design already makes. Built 2026-11-25 as
+   suggestions: `murk` (pictures and videos), `clipped` (3D-look locks), `banding` (pictures).
+9. **Still missing for the five styles:** a book on isometric, and Stanchfield's *Drawn to Life*
+   for the hand-drawn figures.

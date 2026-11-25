@@ -54,6 +54,7 @@ test("style notes come only for the style the request names", async () => {
   const { styleNotes } = await import("../src/brief.ts");
   assert.match(styleNotes("a pixel art poster"), /mixels/);
   assert.match(styleNotes("an isometric illustration"), /2:1/);
+  assert.match(styleNotes("a 3D illustration of a rocket"), /key light/);
   assert.equal(styleNotes("a poster for the launch"), "");
 });
 

@@ -3436,6 +3436,7 @@ var LOCK_DIR = ".attentry-design";
 
 // src/limits.ts
 var MAX_OPTIONS = 5;
+var STYLE_3D = /\b(3d|three[- ]d)\b/i;
 function parseSize(s) {
   if (!s) return {};
   const m = /^(\d+)x(\d+)$/.exec(s);
@@ -3485,6 +3486,7 @@ function toolsFor(remotion) {
 var STYLE_NOTES = [
   [/\bpixel/i, "Pixel art: one pixel grid for everything (never double a sprite's pixels beside 1x parts: those are mixels); lettering from a 5\xD77 or bigger pixel alphabet, a one-pixel gap inside letters and two between them; 1-2 hand-placed in-between shades on lettering and curves, never software smoothing; shade by shifting hue, not only darkening; tinted darks instead of pure black; a few colors per sprite."],
   [/\bisometric/i, "Isometric: every receding edge at the same 2:1 slope (26.57\xB0), one light direction for all faces, nearer objects drawn over farther ones."],
+  [STYLE_3D, "3D look: one key light above and 15-45\xB0 to one side, a dimmer fill from the other side and lower, never its mirror (key 2-4\xD7 the fill for a friendly look, 8\xD7 for drama); every face its own value, no flat ambient side; soft contact shadows under whatever stands, all falling one way; small bevels so edges catch light; small highlights in the light's color, no airbrushed hotspots; warm key, cool fill; surface colors between 15% and 85% lightness; a dark scene still keeps its subject well lit; no lens flares or glows standing in for light."],
   [/\b(flat|vector)\b/i, "Flat vector: build curves from few anchor points at their extremes, smooth joins where a curve flows, no auto-traced or overloaded paths; one stroke weight family."],
   [/\b(hand[- ]?drawn|doodle|sketch|stick figure)/i, "Hand-drawn: one line weight family and one wobble throughout; handwritten lettering big and clear enough to read at phone size."]
 ];

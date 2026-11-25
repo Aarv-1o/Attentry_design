@@ -3789,6 +3789,8 @@ var toOklab = converter_default("oklab");
 var SIDE = 96;
 var SATURATED = 0.12;
 var RAW = 0.17;
+var LIGHT = 0.58;
+var MURK = 0.01;
 async function measure(png) {
   const pixels = await labPixels(png, SIDE);
   const background = borderColor(pixels, SIDE);
@@ -3802,6 +3804,8 @@ async function measure(png) {
     values,
     field,
     midShare: values["light grey"] + values["dark grey"],
+    murky: murky(pixels.map((p4) => p4.l)),
+    clippedShare: pixels.filter((p4) => (p4.l >= 0.995 || p4.l <= 0.01) && distance(p4, background) > 0.05).length / pixels.length,
     palette: kmeans(pixels, 5),
     saturatedShare: chroma.filter((c2) => c2 > SATURATED).length / pixels.length,
     rawPrimaries: rawPrimaries(pixels),
@@ -3839,10 +3843,13 @@ function centerOfMass(pixels, side, background) {
   if (sw === 0) return { x: 0.5, y: 0.5 };
   return { x: sx / sw / side, y: sy / sw / side };
 }
+function murky(lightness) {
+  return lightness.filter((l) => l >= LIGHT).length / lightness.length < MURK;
+}
 function valueBands(pixels) {
   const bands = { white: 0, "light grey": 0, "dark grey": 0, black: 0 };
   for (const { l } of pixels) {
-    bands[l >= 0.82 ? "white" : l >= 0.58 ? "light grey" : l >= 0.34 ? "dark grey" : "black"]++;
+    bands[l >= 0.82 ? "white" : l >= LIGHT ? "light grey" : l >= 0.34 ? "dark grey" : "black"]++;
   }
   for (const k4 of Object.keys(bands)) bands[k4] /= pixels.length;
   return bands;
@@ -3988,6 +3995,7 @@ import { basename } from "node:path";
 
 // src/limits.ts
 var MAX_OPTIONS = 5;
+var STYLE_3D = /\b(3d|three[- ]d)\b/i;
 
 // src/options.ts
 var SAME_LAYOUT = 0.06;
@@ -4117,6 +4125,11 @@ var PHONE_WIDTH = 360;
 var READABLE = 0.85;
 var PIXEL_COLORS = 64;
 var OFF_PALETTE = 0.03;
+var CLIPPED = 0.03;
+var BAND_MIN = 6;
+var BAND_STEP = 6;
+var BAND_RUN = 4;
+var BANDED = 0.15;
 var oklab2 = differenceEuclidean("oklab");
 var toRgb = converter_default("rgb");
 async function check(rendered, m, lock) {
@@ -4135,6 +4148,15 @@ async function check(rendered, m, lock) {
       message: `${rendered.cut.length} small shape${rendered.cut.length === 1 ? "" : "s"} run past the edge of the picture. If that isn't on purpose, move ${rendered.cut.length === 1 ? "it" : "them"} inside the frame.`
     });
   }
+  findings.push(...await banding(rendered));
+  if (lock && STYLE_3D.test(lock.style ?? "") && m.clippedShare > CLIPPED) {
+    findings.push({
+      rule: "clipped",
+      kind: "default",
+      message: `The "${lock.name}" lock is a 3D look, but ${Math.round(m.clippedShare * 100)}% of the picture (the background aside) is pure white or pure black, where its shading is lost. Dim the key light or the material so the brightest part stops short of white, and lift the deepest shadows off black.`,
+      source: "Birn, Digital Lighting & Rendering pp. 157\u2013158, clipping"
+    });
+  }
   if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...approvedWords(lock, texts.map((t) => t.text)), ...await pixelEdges(rendered, lock), ...await mixels(rendered, lock));
   findings.push(...hierarchy(texts));
   const typed = texts.filter((t) => t.source === "text");
@@ -4147,7 +4169,14 @@ async function check(rendered, m, lock) {
       source: "Bang, Picture This, principle 5; Payne p. 38; Loomis p. 46"
     });
   }
-  if (m.midShare > 0.85) {
+  if (m.murky) {
+    findings.push({
+      rule: "murk",
+      kind: "default",
+      message: "Nothing in the picture reaches a light value: it all sits in the dark half. A dark mood comes from contrast, not from dimming everything; keep the field dark and light the subject.",
+      source: "Birn, Digital Lighting & Rendering pp. 152\u2013153, student murk"
+    });
+  } else if (m.midShare > 0.85) {
     findings.push({
       rule: "middle-values",
       kind: "default",
@@ -4255,6 +4284,54 @@ async function pixelEdges(p4, lock) {
     kind: "error",
     message: `The "${lock.name}" lock is pixel art, but the picture has ${colors.size} distinct colors: edges are smoothed, not pixel-sharp. Draw on whole pixels and add shape-rendering="crispEdges" (SVG) or image-rendering: pixelated (CSS).`
   }];
+}
+async function banding(p4) {
+  const { data, info } = await sharp5(p4.png).flatten({ background: "#ffffff" }).raw().toBuffer({ resolveWithObject: true });
+  const { width, height } = info;
+  const share = (lines, length, at) => {
+    let banded = 0, read = 0;
+    for (let line = 0; line < lines; line += 4, read++) if (staircase(data, length, (i) => at(line, i))) banded++;
+    return banded / read;
+  };
+  const most = Math.max(share(height, width, (y, x) => (y * width + x) * 3), share(width, height, (x, y) => (y * width + x) * 3));
+  if (most <= BANDED) return [];
+  return [{
+    rule: "banding",
+    kind: "default",
+    message: `A gradient shows as visible steps (banding) across ${Math.round(most * 100)}% of the picture. Draw it as one real gradient, or add a little noise or texture over it.`,
+    source: "Birn, Digital Lighting & Rendering pp. 153\u2013154, banding"
+  }];
+}
+function staircase(data, length, at) {
+  let start = at(0), len = 1, prev = -1, steps = 0, way = 0;
+  const close = () => {
+    if (len < BAND_MIN) {
+      prev = -1;
+      steps = 0;
+      return false;
+    }
+    const step = prev < 0 ? 0 : faintStep(data, prev, start);
+    if (step && (steps === 0 || step === way)) steps++;
+    else steps = step ? 1 : 0;
+    way = step;
+    prev = start;
+    return steps >= BAND_RUN - 1;
+  };
+  for (let i = 1; i < length; i++) {
+    const o = at(i);
+    if (data[o] === data[start] && data[o + 1] === data[start + 1] && data[o + 2] === data[start + 2]) len++;
+    else {
+      if (close()) return true;
+      start = o;
+      len = 1;
+    }
+  }
+  return close();
+}
+function faintStep(data, a, b) {
+  const d = [data[b] - data[a], data[b + 1] - data[a + 1], data[b + 2] - data[a + 2]];
+  if (Math.max(...d.map(Math.abs)) > BAND_STEP) return 0;
+  return Math.sign(d[0] + d[1] + d[2]);
 }
 function hierarchy(texts) {
   const sizes = texts.map((t) => t.size).sort((a, b) => a - b);
@@ -4549,7 +4626,7 @@ async function checkVideo(c2, frames, lock) {
     });
   }
   const looks = await Promise.all(frames.map(async (f3) => (await labPixels(f3.png, GRID)).map((p4) => p4.l)));
-  findings.push(...blankRuns(looks, frames, c2), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c2));
+  findings.push(...blankRuns(looks, frames, c2), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c2), ...murk(looks));
   findings.push(...callToAction(c2, frames), ...await letteringInImages(c2, frames));
   if (lock) {
     findings.push(...offLock(frames.flatMap((f3) => f3.colors), fonts, lock));
@@ -4691,6 +4768,17 @@ function blankRuns(looks, frames, c2) {
       source: "Attentry Design baseline: blank frames in 8 of 25 gallery videos"
     }];
   });
+}
+function murk(looks) {
+  const shown2 = looks.filter((l) => spread(l) >= BLANK);
+  const dark = shown2.filter(murky).length;
+  if (!shown2.length || dark / shown2.length <= 0.5) return [];
+  return [{
+    rule: "murk",
+    kind: "default",
+    message: `${Math.round(dark / shown2.length * 100)}% of the frames never reach a light value: the video sits in the dark half. A dark mood comes from contrast; keep the field dark and light the subject and the text.`,
+    source: "Birn, Digital Lighting & Rendering pp. 152\u2013153, student murk; Attentry Design baseline: median brightness 50 in AI videos, 238 in the pros'"
+  }];
 }
 function stillRuns(looks, frames) {
   const same = looks.map((l, i) => i > 0 && layoutDistance(l, looks[i - 1]) < STILL && spread(l) >= BLANK);

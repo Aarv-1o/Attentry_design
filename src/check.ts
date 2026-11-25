@@ -7,6 +7,7 @@ import type { Measures } from "./measure.ts";
 import { toHex, type DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
 import { findLettering, readBack, similarity } from "./lettering.ts";
+import { STYLE_3D } from "./limits.ts";
 
 const SAFE_MARGIN = 0.04; // of the shorter side
 
@@ -21,6 +22,11 @@ const PHONE_WIDTH = 360; // px: how wide a phone shows a post or a web image
 const READABLE = 0.85; // similarity of OCR's reading to the words below which lettering is hard to read
 const PIXEL_COLORS = 64; // distinct colors above which edges are smoothed, not pixel art
 const OFF_PALETTE = 0.03; // OKLab distance that still counts as the same color
+const CLIPPED = 0.03; // share of the picture blown out or crushed before a 3D look loses its form
+const BAND_MIN = 6; // px: a band narrower than this is dithering or texture, not a step
+const BAND_STEP = 6; // largest change in a color channel that still reads as a faint contour
+const BAND_RUN = 4; // bands in a row, all stepping one way, that make a staircase
+const BANDED = 0.15; // share of rows or columns with a staircase before banding shows
 const oklab = differenceEuclidean("oklab");
 const toRgb = converter("rgb");
 
@@ -43,6 +49,15 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     });
   }
 
+  findings.push(...(await banding(rendered)));
+  if (lock && STYLE_3D.test(lock.style ?? "") && m.clippedShare > CLIPPED) {
+    findings.push({
+      rule: "clipped",
+      kind: "default",
+      message: `The "${lock.name}" lock is a 3D look, but ${Math.round(m.clippedShare * 100)}% of the picture (the background aside) is pure white or pure black, where its shading is lost. Dim the key light or the material so the brightest part stops short of white, and lift the deepest shadows off black.`,
+      source: "Birn, Digital Lighting & Rendering pp. 157–158, clipping",
+    });
+  }
   if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...approvedWords(lock, texts.map((t) => t.text)), ...(await pixelEdges(rendered, lock)), ...(await mixels(rendered, lock)));
 
   findings.push(...hierarchy(texts));
@@ -57,7 +72,14 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
       source: "Bang, Picture This, principle 5; Payne p. 38; Loomis p. 46",
     });
   }
-  if (m.midShare > 0.85) {
+  if (m.murky) {
+    findings.push({
+      rule: "murk",
+      kind: "default",
+      message: "Nothing in the picture reaches a light value: it all sits in the dark half. A dark mood comes from contrast, not from dimming everything; keep the field dark and light the subject.",
+      source: "Birn, Digital Lighting & Rendering pp. 152–153, student murk",
+    });
+  } else if (m.midShare > 0.85) {
     findings.push({
       rule: "middle-values",
       kind: "default",
@@ -181,6 +203,64 @@ export async function pixelEdges(p: Picture, lock: DesignLock): Promise<Finding[
     kind: "error",
     message: `The "${lock.name}" lock is pixel art, but the picture has ${colors.size} distinct colors: edges are smoothed, not pixel-sharp. Draw on whole pixels and add shape-rendering="crispEdges" (SVG) or image-rendering: pixelated (CSS).`,
   }];
+}
+
+/**
+ * Banding (Birn, Digital Lighting & Rendering pp. 153–154): a gradient shown as visible steps.
+ * Read along rows and columns as runs of one exact color: four or more wide runs in a row, each a
+ * faint step the same way, are a staircase. Dithered gradients (Chrome dithers SVG and CSS ones)
+ * break into one-pixel runs, and flat shapes step by far more, so neither counts.
+ */
+export async function banding(p: Picture): Promise<Finding[]> {
+  const { data, info } = await sharp(p.png).flatten({ background: "#ffffff" }).raw().toBuffer({ resolveWithObject: true });
+  const { width, height } = info;
+  const share = (lines: number, length: number, at: (line: number, i: number) => number) => {
+    let banded = 0, read = 0;
+    for (let line = 0; line < lines; line += 4, read++) if (staircase(data, length, (i) => at(line, i))) banded++;
+    return banded / read;
+  };
+  const most = Math.max(share(height, width, (y, x) => (y * width + x) * 3), share(width, height, (x, y) => (y * width + x) * 3));
+  if (most <= BANDED) return [];
+  return [{
+    rule: "banding",
+    kind: "default",
+    message: `A gradient shows as visible steps (banding) across ${Math.round(most * 100)}% of the picture. Draw it as one real gradient, or add a little noise or texture over it.`,
+    source: "Birn, Digital Lighting & Rendering pp. 153–154, banding",
+  }];
+}
+
+function staircase(data: Buffer, length: number, at: (i: number) => number): boolean {
+  let start = at(0), len = 1, prev = -1, steps = 0, way = 0;
+  const close = () => {
+    if (len < BAND_MIN) {
+      prev = -1;
+      steps = 0;
+      return false;
+    }
+    const step = prev < 0 ? 0 : faintStep(data, prev, start);
+    if (step && (steps === 0 || step === way)) steps++;
+    else steps = step ? 1 : 0;
+    way = step;
+    prev = start;
+    return steps >= BAND_RUN - 1;
+  };
+  for (let i = 1; i < length; i++) {
+    const o = at(i);
+    if (data[o] === data[start] && data[o + 1] === data[start + 1] && data[o + 2] === data[start + 2]) len++;
+    else {
+      if (close()) return true;
+      start = o;
+      len = 1;
+    }
+  }
+  return close();
+}
+
+/** +1 or -1 when the color from a to b changes a little, the same way overall; 0 otherwise. */
+function faintStep(data: Buffer, a: number, b: number): number {
+  const d = [data[b] - data[a], data[b + 1] - data[a + 1], data[b + 2] - data[a + 2]];
+  if (Math.max(...d.map(Math.abs)) > BAND_STEP) return 0;
+  return Math.sign(d[0] + d[1] + d[2]);
 }
 
 /**

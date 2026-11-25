@@ -4,7 +4,7 @@
 import sharp from "sharp";
 import type { Box, TextBox } from "./render.ts";
 import type { Composition, VideoFrame } from "./remotion.ts";
-import { labPixels, layoutDistance } from "./measure.ts";
+import { labPixels, layoutDistance, murky } from "./measure.ts";
 import { contrastFinding, edge, offLock, pixelEdges, scriptLine, short, sizeSteps, tension, wordsOf } from "./check.ts";
 import { findLettering } from "./lettering.ts";
 import type { DesignLock } from "./lock.ts";
@@ -154,9 +154,9 @@ export async function checkVideo(c: Composition, frames: VideoFrame[], lock?: De
     });
   }
 
-  // T1, T2 and T3, from the frames' lightness.
+  // T1, T2, T3 and murk, from the frames' lightness.
   const looks = await Promise.all(frames.map(async (f) => (await labPixels(f.png, GRID)).map((p) => p.l)));
-  findings.push(...blankRuns(looks, frames, c), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c));
+  findings.push(...blankRuns(looks, frames, c), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c), ...murk(looks));
 
   findings.push(...callToAction(c, frames), ...(await letteringInImages(c, frames)));
 
@@ -338,6 +338,19 @@ function blankRuns(looks: number[][], frames: VideoFrame[], c: Composition): Fin
       source: "Attentry Design baseline: blank frames in 8 of 25 gallery videos",
     }];
   });
+}
+
+/** Student murk across the video: most frames with something on them never reach a light value. */
+function murk(looks: number[][]): Finding[] {
+  const shown = looks.filter((l) => spread(l) >= BLANK);
+  const dark = shown.filter(murky).length;
+  if (!shown.length || dark / shown.length <= 0.5) return [];
+  return [{
+    rule: "murk",
+    kind: "default",
+    message: `${Math.round((dark / shown.length) * 100)}% of the frames never reach a light value: the video sits in the dark half. A dark mood comes from contrast; keep the field dark and light the subject and the text.`,
+    source: "Birn, Digital Lighting & Rendering pp. 152–153, student murk; Attentry Design baseline: median brightness 50 in AI videos, 238 in the pros'",
+  }];
 }
 
 /** T2: the same frame held for longer than the pros ever hold. */

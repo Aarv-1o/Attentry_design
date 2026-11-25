@@ -2,3 +2,5 @@ node_modules/
 # Renders are written to experiments/*/out; the ones committed there are the test's results.
 *.log
 .attentry-design/
+# Language data an early OCR run cached here (the code now caches in the temp folder).
+eng.traineddata

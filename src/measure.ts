@@ -27,6 +27,8 @@ export interface Measures {
   values: Record<Value, number>; // share of the area in each value band
   field: Value;
   midShare: number; // light grey + dark grey
+  murky: boolean; // nothing reaches a light value: Birn's "student murk"
+  clippedShare: number; // share blown to pure white or crushed to pure black, the background aside
   palette: Swatch[];
   saturatedShare: number; // share of pixels with OKLCh chroma above SATURATED
   rawPrimaries: string[]; // which of red, yellow, blue appear at full strength over 2% of the area
@@ -36,6 +38,8 @@ export interface Measures {
 const SIDE = 96; // measurements run on a 96 × 96 copy: enough for layout and color, and fast
 const SATURATED = 0.12;
 const RAW = 0.17;
+const LIGHT = 0.58; // OKLab lightness where Loomis's light grey starts
+const MURK = 0.01; // share of light pixels under which a picture is all in the dark half
 
 export async function measure(png: Buffer): Promise<Measures> {
   const pixels = await labPixels(png, SIDE);
@@ -50,6 +54,8 @@ export async function measure(png: Buffer): Promise<Measures> {
     values,
     field,
     midShare: values["light grey"] + values["dark grey"],
+    murky: murky(pixels.map((p) => p.l)),
+    clippedShare: pixels.filter((p) => (p.l >= 0.995 || p.l <= 0.01) && distance(p, background) > 0.05).length / pixels.length,
     palette: kmeans(pixels, 5),
     saturatedShare: chroma.filter((c) => c > SATURATED).length / pixels.length,
     rawPrimaries: rawPrimaries(pixels),
@@ -98,10 +104,18 @@ function centerOfMass(pixels: Lab[], side: number, background: Lab) {
   return { x: sx / sw / side, y: sy / sw / side };
 }
 
+/**
+ * Student murk (Birn, Digital Lighting & Rendering pp. 152–153): the whole picture sits in the dark
+ * half, nothing lit. A dark field with a lit subject isn't murk: the subject reaches light values.
+ */
+export function murky(lightness: number[]): boolean {
+  return lightness.filter((l) => l >= LIGHT).length / lightness.length < MURK;
+}
+
 function valueBands(pixels: Lab[]): Record<Value, number> {
   const bands: Record<Value, number> = { white: 0, "light grey": 0, "dark grey": 0, black: 0 };
   for (const { l } of pixels) {
-    bands[l >= 0.82 ? "white" : l >= 0.58 ? "light grey" : l >= 0.34 ? "dark grey" : "black"]++;
+    bands[l >= 0.82 ? "white" : l >= LIGHT ? "light grey" : l >= 0.34 ? "dark grey" : "black"]++;
   }
   for (const k of Object.keys(bands) as Value[]) bands[k] /= pixels.length;
   return bands;

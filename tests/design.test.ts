@@ -216,6 +216,33 @@ test("visual tension: a ring whose curve runs through a label is named; one clea
   assert.ok(!found.message.includes("After an edit"));
 });
 
+test("murk: a scene with nothing lit is named; a dark night with a lit window and moon isn't", async () => {
+  const murky = await rules("murky.svg");
+  assert.ok(murky.includes("murk"));
+  assert.ok(!murky.includes("middle-values"), "murk says it more exactly");
+  for (const name of ["night-lit.svg", "invite-diagonal.svg", "banded-sky.svg"]) assert.ok(!(await rules(name)).includes("murk"), name);
+});
+
+test("banding: a sky of faint stacked bands is named; a real gradient and flat shapes aren't", async () => {
+  assert.ok((await rules("banded-sky.svg")).includes("banding"));
+  for (const name of ["smooth-sky.svg", "invite-diagonal.svg", "pixel-crisp.svg", "flat-labels.svg"]) assert.ok(!(await rules(name)).includes("banding"), name);
+});
+
+test("a 3D lock: a ball blown out to white is named; a shaded one isn't, nor a flat lock", async () => {
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  const shaded = await load("ball-shaded.svg");
+  await writeLock(project, "ball", shaded, await measure(shaded.png), "3D look");
+  const lock = await readLock(project, "ball");
+  const found = async (name: string, l = lock) => {
+    const r = await load(name);
+    return (await check(r, await measure(r.png), l)).map((f) => f.rule);
+  };
+  assert.ok(!(await found("ball-shaded.svg")).includes("clipped"));
+  assert.ok((await found("ball-blown.svg")).includes("clipped"));
+  await writeLock(project, "flat", shaded, await measure(shaded.png), "flat vector");
+  assert.ok(!(await found("ball-blown.svg", await readLock(project, "flat"))).includes("clipped"));
+});
+
 test("lock names can't escape the lock folder", async () => {
   await assert.rejects(readLock(tmpdir(), "../x"), /letters, digits/);
 });

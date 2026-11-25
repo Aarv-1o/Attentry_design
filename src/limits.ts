@@ -4,6 +4,9 @@ import type { RenderOptions } from "./render.ts";
 
 export const MAX_OPTIONS = 5;
 
+/** A request or lock naming the 3D look. */
+export const STYLE_3D = /\b(3d|three[- ]d)\b/i;
+
 /** A page size given as WxH, like 1200x630. */
 export function parseSize(s?: string): RenderOptions {
   if (!s) return {};

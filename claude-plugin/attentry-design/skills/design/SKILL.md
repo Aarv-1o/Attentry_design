@@ -26,7 +26,9 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    thing as a portrait, an amount as a chart, a place as a map, a sequence as a timeline, a process
    as a flow with arrows (Roam's <6><6> rule). Size the main characters by the smallest part that
    must read (an expression, a gesture). Give an explaining picture a title and label its parts;
-   keep text and shapes clearly away from edges or clearly overlapping them, never just touching. Pixel art: one pixel grid, no doubled sprites (mixels).
+   keep text and shapes clearly away from edges or clearly overlapping them, never just touching. Pixel art: one pixel grid, no doubled sprites (mixels). 3D look: one key
+   light above and to the side, a dimmer fill never mirroring it, soft contact shadows all one way,
+   small highlights, no flat ambient sides.
 3. **Lock.** Call `lock_design` with the chosen file, a short name, the style and the approved
    words (one line each); the check then flags any approved word missing from the design. A pixel-art lock
    is checked for pixel-sharp edges.

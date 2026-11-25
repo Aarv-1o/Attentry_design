@@ -130,9 +130,10 @@ Read 2026-11-24 (two passes, notes in attentry-design-book-notes.md):
 | Jennifer Dawe & Matthew Humphries, *Make Your Own Pixel Art* | Pixel art basics (read) |
 | Dan Roam, *The Back of the Napkin* | Hand-drawn explaining: the right picture for each kind of idea (read) |
 | Von Glitschka, *Vector Basic Training* | Flat vector: clean anchor points and curves (read) |
+| Jeremy Birn, *Digital Lighting & Rendering* (1st ed., 2000) | 3D look: key and fill, shadows, highlights, histogram faults (read 2026-11-25) |
 
-Still to find: a book on isometric illustration, one on the 3D look, and Stanchfield's *Drawn to
-Life* (gesture, for hand-drawn figures).
+Still to find: a book on isometric illustration, and Stanchfield's *Drawn to Life* (gesture, for
+hand-drawn figures).
 
 ## Free standards and papers (read online)
 
