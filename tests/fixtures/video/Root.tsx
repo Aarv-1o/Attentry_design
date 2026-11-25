@@ -23,7 +23,8 @@ const BadPromo = () => {
   );
 };
 
-// A headline that fades in and holds, a readable line under it, everything inside the margins.
+// A headline that fades in and holds, a readable line under it, a link to act on, everything
+// inside the margins.
 const GoodPromo = () => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
@@ -32,6 +33,7 @@ const GoodPromo = () => {
     <AbsoluteFill style={{ background: "#f5f1e8", fontFamily: font }}>
       <div style={{ position: "absolute", left: 200, top: 380 + rise, fontSize: 96, color: "#1d2a33", opacity }}>Ship faster</div>
       <div style={{ position: "absolute", left: 200, top: 520, fontSize: 48, color: "#2f3f4a", opacity }}>Checks your code without AI</div>
+      <div style={{ position: "absolute", left: 200, top: 610, fontSize: 48, color: "#2f3f4a", opacity }}>attentry.js.org</div>
       <div style={{ position: "absolute", left: 1400 - frame, top: 200, width: 220, height: 220, borderRadius: 110, background: "#e07a3f" }} />
     </AbsoluteFill>
   );
@@ -77,6 +79,49 @@ const RingPromo = () => (
   </AbsoluteFill>
 );
 
+
+// A caption that comes in while the stripes behind it are still panning (T3).
+const MovePromo = () => {
+  const frame = useCurrentFrame();
+  const x = -Math.min(frame, 60) * 12;
+  return (
+    <AbsoluteFill style={{ background: "#1b1d22", fontFamily: font }}>
+      <div style={{ position: "absolute", left: x, top: 0, width: 4000, height: 1080, background: "repeating-linear-gradient(90deg, #2b3a55 0 120px, #d8dee9 120px 240px)" }} />
+      {frame >= 40 && (
+        <div style={{ position: "absolute", left: 560, top: 470, padding: "20px 40px", background: "#10151c", color: "#ffffff", fontSize: 80, opacity: interpolate(frame, [40, 44], [0, 1], { extrapolateRight: "clamp" }) }}>Now in every editor</div>
+      )}
+    </AbsoluteFill>
+  );
+};
+
+// The call to action is the smallest, dimmest line on the end card (S1, Hitchcock's rule).
+const SmallCtaPromo = () => (
+  <AbsoluteFill style={{ background: "#f5f1e8", fontFamily: font }}>
+    <div style={{ position: "absolute", left: 200, top: 360, fontSize: 96, color: "#1d2a33" }}>Ship faster</div>
+    <div style={{ position: "absolute", left: 200, top: 500, fontSize: 48, color: "#2f3f4a" }}>Checks your code</div>
+    <div style={{ position: "absolute", left: 200, top: 600, fontSize: 28, color: "#5a6670" }}>Download at attentry.js.org</div>
+  </AbsoluteFill>
+);
+
+// A brand ending: a line at the start, then only the logo shape (no call to action needed).
+const LogoPromo = () => {
+  const frame = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{ background: "#f5f1e8", fontFamily: font }}>
+      {frame < 28 && <div style={{ position: "absolute", left: 200, top: 400, fontSize: 96, color: "#1d2a33" }}>Ship faster</div>}
+      {frame >= 28 && <div style={{ position: "absolute", left: 860, top: 440, width: 200, height: 200, borderRadius: 40, background: "#1d2a33" }} />}
+    </AbsoluteFill>
+  );
+};
+
+// A picture with lettering in it (only pixels to the browser) that runs off the frame's edge.
+const ImagePromo = () => (
+  <AbsoluteFill style={{ background: "#f5f1e8", fontFamily: font }}>
+    <div style={{ position: "absolute", left: 200, top: 200, fontSize: 80, color: "#1d2a33" }}>Try it at attentry.js.org</div>
+    <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%221400%22%20height%3D%22300%22%3E%3Crect%20width%3D%221400%22%20height%3D%22300%22%20fill%3D%22%23ffffff%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%22190%22%20font-family%3D%22Arial%22%20font-weight%3D%22700%22%20font-size%3D%22120%22%20fill%3D%22%23111111%22%3ELIMITED%20OFFER%20TODAY%3C%2Ftext%3E%3C%2Fsvg%3E" style={{ position: "absolute", left: 900, top: 560, width: 1400, height: 300 }} />
+  </AbsoluteFill>
+);
+
 export const Root = () => (
   <>
     <Composition id="BadPromo" component={BadPromo} {...common} />
@@ -84,5 +129,9 @@ export const Root = () => (
     <Composition id="DriftPromo" component={DriftPromo} {...common} />
     <Composition id="CardPromo" component={CardPromo} {...common} />
     <Composition id="RingPromo" component={RingPromo} {...common} />
+    <Composition id="MovePromo" component={MovePromo} {...common} />
+    <Composition id="SmallCtaPromo" component={SmallCtaPromo} {...common} />
+    <Composition id="LogoPromo" component={LogoPromo} {...common} />
+    <Composition id="ImagePromo" component={ImagePromo} {...common} />
   </>
 );

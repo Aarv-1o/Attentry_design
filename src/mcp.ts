@@ -26,7 +26,7 @@ const COMPOSITION = z.string().min(1).max(200).describe("A composition id, as in
 const STYLE = z.string().max(60).optional()
   .describe('The world style the person chose: "stick figure", "flat 2D", "3D", "pixel art", or their own words. A pixel-art lock is checked for pixel-sharp edges.');
 const WORDS = z.array(z.string().min(1).max(500)).max(60).optional()
-  .describe("The words the person approved, one line each: the video's script (every caption, in order) or the picture's exact text (headline, labels). The check holds the finished design to them.");
+  .describe("The words the person approved, one line each: the video's script (every caption, in order, with its time as "line | 3s") or the picture's exact text (headline, labels). The check holds the finished design to them: every line there, in order, for its time.");
 const NAME = z.string().regex(/^[\w-]{1,60}$/, "Letters, digits, - and _ only.").describe('A short name for the lock, like "invitation".');
 
 const TOOLS = {
@@ -60,7 +60,7 @@ const TOOLS = {
   },
   check_video: {
     title: "Check the finished video",
-    description: "Call on a finished Remotion composition. Reads a frame every quarter second. Errors: text shown too briefly to read, text too small or low in contrast, text at the edge, blank stretches, colors or fonts outside the lock. Suggestions: the same frame held over 6 s, too many fonts.",
+    description: "Call on a finished Remotion composition. Reads a frame every quarter second. Errors: text shown too briefly to read, text too small or low in contrast, text cut off (also lettering inside pictures, read by OCR), blank stretches, colors or fonts outside the lock, the approved script missing, out of order or too short. Suggestions: text arriving mid-move, no call to action at the end or a smallest one, too many sizes or sizes too close, too many fonts, the same frame held over 6 s.",
     inputSchema: z.object({ entry: ENTRY, composition: COMPOSITION, lock: NAME.optional().describe("The lock to hold it to.") }),
   },
 } as const;

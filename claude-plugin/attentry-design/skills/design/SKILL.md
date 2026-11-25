@@ -9,7 +9,7 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    have or avoid. If they skip or decline the questions, don't stop: choose sensible answers
    yourself, state them in one line, and go on to the options, where they choose by looking.
    **Then the words**, which carry the message: for a video the script (every caption or spoken
-   line, in order, with about how long it stays up); for a picture the headline and every label.
+   line, in order, with how long it stays up, written as `line | 3s`); for a picture the headline and every label.
    If the person gave them, use them word for word. If not, draft them from the single message,
    show them in the chat as a plain list, and wait for a yes or changes before drawing. Don't skip
    this, even when the questions were skipped: a picture can't rescue words that don't say it.

@@ -32,6 +32,7 @@ export interface VideoFrame {
   fonts: string[];
   panels: Box[];
   rings: Box[];
+  images: Box[];
 }
 
 const TIMEOUT = 30_000;
@@ -131,7 +132,7 @@ export class RemotionProject {
       await this.ready();
       await this.page.evaluate("document.fonts.ready");
       const png = await this.page.screenshot({ type: "png" });
-      const read = (await this.page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "panels" | "rings">;
+      const read = (await this.page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "panels" | "rings" | "images">;
       out.push({ frame, time: frame / c.fps, png, ...read });
     }
     return out;

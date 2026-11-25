@@ -158,16 +158,26 @@ test("text size at phone width: small labels are named; big ones aren't", async 
   assert.ok(!(await rules("flat-labels.svg")).some((r) => r.startsWith("text-small") || r === "text-too-small"));
 });
 
-test("drawn lettering a reader misreads is a suggestion; lettering it reads is left alone", { timeout: 60_000 }, async () => {
-  const r = await load("github-pixel-cards.svg");
-  const found = await check(r, await measure(r.png));
-  const hard = found.find((f) => f.rule === "hard-to-read");
-  assert.ok(hard, JSON.stringify(found));
+test("drawn lettering no reader can read is a suggestion; pixel lettering read once softened is left alone", { timeout: 60_000 }, async () => {
+  const noise = await load("noise-lettering.svg");
+  const hard = (await check(noise, await measure(noise.png))).find((f) => f.rule === "hard-to-read");
+  assert.ok(hard);
   assert.equal(hard.kind, "default");
-  assert.ok(!hard.message.includes('"BRANCH & MERGE" as'));
+  // The GitHub pixel run: OCR misread its blocky letters until softened; it's still small on a phone.
+  const cards = await load("github-pixel-cards.svg");
+  const found = (await check(cards, await measure(cards.png))).map((f) => f.rule);
+  assert.ok(!found.includes("hard-to-read"), found.join(", "));
+  assert.ok(found.includes("text-small"));
   const { similarity } = await import("../src/lettering.ts");
   assert.equal(similarity("ROLL BACK", "roll back"), 1);
+  assert.equal(similarity("GO BACK", "G0 BACK"), 1); // OCR's 0 for O isn't a misreading
   assert.ok(similarity("BACK UP CODE", "EBACE UF CODE") < 0.85);
+});
+
+test("R4: sizes within 1.2× of each other, and more than four sizes, are named", async () => {
+  assert.ok((await rules("flat-labels.svg")).includes("sizes-too-close")); // 40 and 36 px
+  assert.ok((await rules("many-sizes.svg")).includes("too-many-sizes"));
+  assert.ok(!(await rules("invite-steelyard.svg")).includes("sizes-too-close"));
 });
 
 test("mixels: doubled sprites beside 1x lettering are caught; one grid passes", async () => {

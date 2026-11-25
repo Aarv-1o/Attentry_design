@@ -17,7 +17,9 @@ const MIN_LETTERS = 3;
 let starting: Promise<Worker> | undefined;
 
 function getWorker(): Promise<Worker> {
-  starting ??= createWorker("eng", 1, { langPath: eng.langPath, gzip: true, cachePath: join(tmpdir(), "attentry-design-ocr"), logger: () => {} });
+  starting ??= createWorker("eng", 1, { langPath: eng.langPath, gzip: true, cachePath: join(tmpdir(), "attentry-design-ocr"), logger: () => {} })
+    // Tesseract's own warnings ("guessing pitch…") would land in the person's output.
+    .then(async (w) => (await w.setParameters({ debug_file: "/dev/null" }), w));
   return starting;
 }
 
@@ -60,8 +62,10 @@ export async function findLettering(png: Buffer, known: TextBox[] = []): Promise
 }
 
 /**
- * What a reader makes of a line of drawn lettering: OCR on just that line, enlarged. Used to test
- * whether lettering whose words we know (marked with data-text) can actually be read.
+ * What a reader makes of a line of drawn lettering: OCR on just that line, enlarged, as drawn and
+ * softened, keeping the reading closest to the words. Used to test whether lettering whose words
+ * we know (marked with data-text) can actually be read. Softening is for pixel lettering: OCR is
+ * trained on smooth type and misreads blocky letters people read fine (R as E, N as M).
  */
 export async function readBack(png: Buffer, width: number, height: number, t: TextBox): Promise<string> {
   const worker = await getWorker();
@@ -69,10 +73,14 @@ export async function readBack(png: Buffer, width: number, height: number, t: Te
   const left = Math.max(0, Math.floor(t.box.x - pad)), top = Math.max(0, Math.floor(t.box.y - pad));
   const w = Math.min(width - left, Math.ceil(t.box.width + 2 * pad)), h = Math.min(height - top, Math.ceil(t.box.height + 2 * pad));
   if (w < 2 || h < 2) return "";
-  const line = await sharp(png).flatten({ background: "#ffffff" }).extract({ left, top, width: w, height: h })
-    .resize({ width: w * 2, kernel: "nearest" }).greyscale().normalise().png().toBuffer();
+  const crisp = sharp(png).flatten({ background: "#ffffff" }).extract({ left, top, width: w, height: h })
+    .resize({ width: w * 2, kernel: "nearest" });
+  // One letter pixel of a 7-pixel-tall alphabet, enlarged 2×: soften by about half of it.
+  const soft = crisp.clone().blur(Math.max(0.3, (t.box.height / 7) * 2 * 0.3));
   await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_LINE });
-  return (await worker.recognize(line)).data.text.trim();
+  const readings: string[] = [];
+  for (const img of [crisp, soft]) readings.push((await worker.recognize(await img.greyscale().normalise().png().toBuffer())).data.text.trim());
+  return readings.reduce((best, r) => (similarity(t.text, r) > similarity(t.text, best) ? r : best));
 }
 
 /**
@@ -80,7 +88,9 @@ export async function readBack(png: Buffer, width: number, height: number, t: Te
  * longer length. Written by hand: it's a dozen lines, not worth a package.
  */
 export function similarity(a: string, b: string): number {
-  const x = a.toUpperCase().replace(/[^\p{L}\p{N}]/gu, ""), y = b.toUpperCase().replace(/[^\p{L}\p{N}]/gu, "");
+  // OCR's look-alikes (0 for O, 1 for I) aren't misreadings a person would make.
+  const norm = (s: string) => s.toUpperCase().replace(/[^\p{L}\p{N}]/gu, "").replace(/0/g, "O").replace(/1/g, "I");
+  const x = norm(a), y = norm(b);
   if (!x.length && !y.length) return 1;
   let prev = Array.from({ length: y.length + 1 }, (_, j) => j);
   for (let i = 1; i <= x.length; i++) {

@@ -149,8 +149,11 @@ Written by hand, because no library fits: the diversity report, the subject-posi
    the lock; text near the edge is one suggestion. Crowded frames (a whole IDE) are texture: only
    caption-sized text in them counts. On Attentry's own two videos it agrees with the 2026-11-19
    hand review on reading time (the hook: 34 characters in 0.75 s, needs 2 s), contrast and fonts.
-   Not yet: text changing during a camera move (T3), sizes too close (R4), the call to action at the
-   end (S1).
+   Added 2026-11-25: text arriving mid-move (T3), too many sizes and sizes too close (R4, pictures
+   too), the call to action at the end and Hitchcock's rule for it (S1), lettering inside pictures
+   in a video (OCR about once a second; a picture full of lines counts as texture), and the
+   approved script held in order and for its time. Pixel lettering is read as drawn and softened
+   (OCR misreads blocky letters people read fine).
 4. **Packaging.** The VS Code extension and the stores, the site page, then Codex. Decide here how
    it takes Attentry's plumbing (hooks install, background process, Check setup): a package
    Attentry publishes, a copy, or a split-out core.

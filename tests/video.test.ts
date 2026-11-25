@@ -7,9 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { closeBrowser } from "../src/render.ts";
 import { closeRemotion } from "../src/remotion.ts";
+import { closeOcr } from "../src/lettering.ts";
 import { runVideoCheck, runVideoLock, runVideoOptions } from "../src/stages.ts";
 
-after(() => Promise.all([closeBrowser(), closeRemotion()]));
+after(() => Promise.all([closeBrowser(), closeRemotion(), closeOcr()]));
 
 // The fixture uses this repo's own Remotion, so the repo is the project.
 const project = join(import.meta.dirname, "..");
@@ -52,4 +53,32 @@ test("video lock: the locked promo passes; a drifted one is caught for color and
   const drift = await rules("DriftPromo", "promo", at);
   assert.ok(drift.includes("off-lock-colors"));
   assert.ok(drift.includes("off-lock-fonts"));
+});
+
+test("T3: a caption that arrives while the picture behind it is still panning", { timeout: 120_000 }, async () => {
+  assert.ok((await rules("MovePromo")).includes("text-during-move"));
+});
+
+test("S1: a call to action that's the smallest line is named; a logo ending isn't asked for one", { timeout: 120_000 }, async () => {
+  assert.ok((await rules("SmallCtaPromo")).includes("call-to-action-smallest"));
+  const logo = await rules("LogoPromo");
+  assert.ok(!logo.includes("no-call-to-action") && !logo.includes("call-to-action-smallest"), logo.join(", "));
+  assert.ok((await rules("MovePromo")).includes("no-call-to-action"));
+});
+
+test("OCR: lettering inside a picture that runs off the frame is cut off", { timeout: 180_000 }, async () => {
+  const r = await runVideoCheck(project, join(project, entry), "ImagePromo");
+  const cut = r.findings.find((f) => f.rule === "text-cut");
+  assert.ok(cut, r.text);
+  assert.match(cut.message, /in a picture at/);
+});
+
+test("the approved script: a line missing, a line out of order, a line up shorter than approved", { timeout: 120_000 }, async () => {
+  const at = await mkdtemp(join(tmpdir(), "ad-"));
+  await runVideoLock(at, join(project, entry), "CardPromo", "card", undefined, ["Checks every edit | 3s", "Built in a weekend", "Ship faster"]);
+  const r = await runVideoCheck(at, join(project, entry), "CardPromo", "card");
+  const by = (rule: string) => r.findings.find((f) => f.rule === rule)?.message ?? "";
+  assert.match(by("approved-words"), /"Ship faster" \(ship, faster\)/);
+  assert.match(by("script-order"), /"Built in a weekend" comes before "Checks every edit"/);
+  assert.match(by("script-timing"), /"Checks every edit" is up 1\.\d s of the 3 s approved/);
 });

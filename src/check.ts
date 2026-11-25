@@ -46,6 +46,8 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
   if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...approvedWords(lock, texts.map((t) => t.text)), ...(await pixelEdges(rendered, lock)), ...(await mixels(rendered, lock)));
 
   findings.push(...hierarchy(texts));
+  const typed = texts.filter((t) => t.source === "text");
+  findings.push(...sizeSteps(new Map(typed.map((t) => [t.text, t.size])), [typed.map((t) => t.text)]));
 
   if (m.centered && !lock?.composition.centered) {
     findings.push({
@@ -333,17 +335,61 @@ export function tension(r: Pick<Rendered, "panels" | "rings">, texts: TextBox[])
   }];
 }
 
-const wordsOf = (s: string) => s.toLowerCase().replace(/['’]/g, "").match(/[\p{L}\p{N}]+/gu) ?? [];
+const SAME_SIZE = 1.05; // sizes this close are one size (rounding, a tspan)
+const CLOSE_SIZE = 1.2; // sizes closer than this can't be told apart (R4)
+const MOST_SIZES = 4;
+
+/**
+ * R4: a modest set of text sizes, each clearly apart from the others on screen with it. `size` is
+ * each text's size; `together` lists the texts seen at the same time (one list for a picture).
+ */
+export function sizeSteps(size: Map<string, number>, together: string[][]): Finding[] {
+  const out: Finding[] = [];
+  const levels: number[] = [];
+  for (const s of [...size.values()].sort((a, b) => a - b)) if (!levels.length || s / levels.at(-1)! > SAME_SIZE) levels.push(s);
+  if (levels.length > MOST_SIZES) {
+    out.push({
+      rule: "too-many-sizes",
+      kind: "default",
+      message: `${levels.length} text sizes (${levels.map((s) => Math.round(s)).join(", ")} px). About ${MOST_SIZES} distinct sizes are enough: merge the ones that are near each other.`,
+      source: "Bringhurst, The Elements of Typographic Style: a modest set of distinct and related intervals",
+    });
+  }
+  const close = new Map<string, string>();
+  for (const group of together) {
+    for (const a of group) for (const b of group) {
+      const [x, y] = [size.get(a)!, size.get(b)!];
+      if (x / y > SAME_SIZE && x / y < CLOSE_SIZE) close.set(`${a} | ${b}`, `"${short(a)}" (${Math.round(x)} px) and "${short(b)}" (${Math.round(y)} px)`);
+    }
+  }
+  if (close.size) {
+    out.push({
+      rule: "sizes-too-close",
+      kind: "default",
+      message: `Sizes too close to tell apart: ${[...close.values()].slice(0, 4).join("; ")}${close.size > 4 ? ` and ${close.size - 4} more` : ""}. Make them one size, or at least 1.2× apart.`,
+      source: "Williams, The Non-Designer's Design Book: you cannot contrast 12-point type with 14-point type",
+    });
+  }
+  return out;
+}
+
+export const wordsOf = (s: string) => s.toLowerCase().replace(/['’]/g, "").match(/[\p{L}\p{N}]+/gu) ?? [];
 
 /**
  * The words the person approved (the script, the exact text) all made it into the design. Word by
  * word, not line by line: a line is often split over several elements (a colored word in a span).
  * Lettering read by OCR may be a letter off, so longer words match when nearly the same.
  */
+/** One approved line: its words and, for a video script, how long it stays up ("line | 3s"). */
+export function scriptLine(line: string): { text: string; seconds?: number } {
+  const m = /^(.*?)\s*\|\s*(\d+(?:\.\d+)?)\s*s\s*$/.exec(line);
+  return m ? { text: m[1], seconds: Number(m[2]) } : { text: line };
+}
+
 export function approvedWords(lock: DesignLock, shown: string[]): Finding[] {
   const seen = new Set(shown.flatMap(wordsOf));
   const there = (w: string) => seen.has(w) || (w.length >= 4 && [...seen].some((s) => similarity(w, s) >= 0.8));
-  const missing = (lock.words ?? []).map((line) => ({ line, gone: wordsOf(line).filter((w) => !there(w)) })).filter((m) => m.gone.length);
+  const missing = (lock.words ?? []).map((l) => scriptLine(l).text).map((line) => ({ line, gone: wordsOf(line).filter((w) => !there(w)) })).filter((m) => m.gone.length);
   if (!missing.length) return [];
   return [{
     rule: "approved-words",

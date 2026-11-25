@@ -39,6 +39,7 @@ export interface Rendered {
   cut: Box[]; // small painted shapes that run past the frame's edge
   panels: Box[]; // painted shapes big enough to hold text (cards, bubbles, buttons, panels)
   rings: Box[]; // outlined circles and ellipses (their curve can run through text)
+  images: Box[]; // pictures (img, video, canvas, SVG image, CSS background images): their lettering is only pixels
 }
 
 // One browser for the whole run, shared by every render (launched once even when renders start
@@ -77,7 +78,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
   // A generated image is only pixels: nothing to read from a source, lettering comes from OCR.
   if (RASTER.has(extname(file).toLowerCase())) {
     const { data, info } = await sharp(file).png().toBuffer({ resolveWithObject: true });
-    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [], panels: [], rings: [] };
+    return { file, png: data, width: info.width, height: info.height, colors: [], fonts: [], texts: [], cut: [], panels: [], rings: [], images: [] };
   }
   const page = await (await getBrowser()).newPage({
     viewport: { width: options.width ?? 1200, height: options.height ?? 800 },
@@ -90,7 +91,7 @@ export async function render(file: string, options: RenderOptions = {}): Promise
     await page.evaluate("document.fonts.ready");
     const viewport = page.viewportSize()!;
     const png = await page.screenshot({ type: "png" });
-    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut" | "panels" | "rings">;
+    const read = (await page.evaluate(READ_DESIGN)) as Pick<Rendered, "colors" | "fonts" | "texts" | "cut" | "panels" | "rings" | "images">;
     return { file, png, width: viewport.width, height: viewport.height, ...read };
   } finally {
     await page.close();
@@ -111,7 +112,7 @@ const SVG_SIZE = `(() => {
 export const READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
-  const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [], rings = [];
+  const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [], rings = [], images = [];
   const panel = (r) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height }); };
   const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
@@ -153,6 +154,11 @@ export const READ_DESIGN = `(() => {
     if (embedded(el)) continue;
     const style = getComputedStyle(el);
     if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") continue;
+    const tagName = el.tagName.toLowerCase();
+    if ((["img", "video", "canvas", "image"].includes(tagName) || /url\\(/.test(style.backgroundImage)) && images.length < 50) {
+      const b = shown(el, el.getBoundingClientRect());
+      if (b && b.width * b.height > 0.01 * vw * vh) images.push(b);
+    }
     const svg = el instanceof SVGElement;
     if (svg && el.tagName.toLowerCase() === "stop") {
       if (visible(style.stopColor)) colors.add(style.stopColor);
@@ -199,7 +205,8 @@ export const READ_DESIGN = `(() => {
     const family = style.fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
     fonts.add(family);
     const opacity = opacityOf(el);
-    const scale = !svg && el.offsetHeight ? full.height / el.offsetHeight : 1;
+    // On-screen scale from the element's own box (the words' box is a different height).
+    const scale = !svg && el.offsetHeight ? el.getBoundingClientRect().height / el.offsetHeight : 1;
     // The box the text sits in: for HTML, the nearest ancestor that draws a background or border
     // (DOM nesting knows what's in what, and what's on top; geometry alone doesn't).
     let holder;
@@ -220,5 +227,5 @@ export const READ_DESIGN = `(() => {
       box: { x: r.x, y: r.y, width: r.width, height: r.height },
     });
   }
-  return { colors: [...colors], fonts: [...fonts], texts, cut, panels, rings };
+  return { colors: [...colors], fonts: [...fonts], texts, cut, panels, rings, images };
 })()`;

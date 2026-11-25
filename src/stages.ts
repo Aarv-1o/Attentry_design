@@ -116,6 +116,7 @@ async function storyboardOf(project: string, entry: string, remotion: RemotionPr
     cut: [],
     panels: [],
     rings: [],
+    images: [],
   };
 }
 
