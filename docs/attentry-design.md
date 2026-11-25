@@ -38,6 +38,14 @@ the brief, the options and the finished render, not every edit.
 
 Quick requests ("just a quick one") skip to stage 4 with the error checks only.
 
+**The words come before the drawing (added 2026-11-25).** At the end of the brief the agent gets
+the words approved: a video's script (every caption or spoken line, in order, with how long it
+stays up) or a picture's headline and labels. If the person gave none, the agent drafts them from
+the single message and shows them in the chat for a yes before drawing; this isn't skipped when
+the questions are. The lock keeps them (`words`), and the finish check flags every approved word
+missing from the design (`approved-words`, an error). It matches word by word, since one line is
+often split across elements; a line whose words all appear elsewhere slips through.
+
 **In the chat, not a panel.** Everything the person sees comes through the agent's replies, so
 the information stays in one place. Images can't be drawn in a terminal, so the contact sheet and
 the card are PNG files the agent links; the person picks an option by number in the question

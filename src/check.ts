@@ -43,7 +43,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
     });
   }
 
-  if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...(await pixelEdges(rendered, lock)), ...(await mixels(rendered, lock)));
+  if (lock) findings.push(...offLock(rendered.colors, rendered.fonts, lock), ...approvedWords(lock, texts.map((t) => t.text)), ...(await pixelEdges(rendered, lock)), ...(await mixels(rendered, lock)));
 
   findings.push(...hierarchy(texts));
 
@@ -330,6 +330,26 @@ export function tension(r: Pick<Rendered, "panels" | "rings">, texts: TextBox[])
     kind: "default",
     message: `${tight.join(", ")} ${tight.length === 1 ? "almost touches" : "almost touch"} the edge of the shape around ${tight.length === 1 ? "it" : "them"}. Give clear room inside, or let it clearly overlap the edge.`,
     source: "Glitschka, Vector Basic Training pp. 189–191 (visual tension)",
+  }];
+}
+
+const wordsOf = (s: string) => s.toLowerCase().replace(/['’]/g, "").match(/[\p{L}\p{N}]+/gu) ?? [];
+
+/**
+ * The words the person approved (the script, the exact text) all made it into the design. Word by
+ * word, not line by line: a line is often split over several elements (a colored word in a span).
+ * Lettering read by OCR may be a letter off, so longer words match when nearly the same.
+ */
+export function approvedWords(lock: DesignLock, shown: string[]): Finding[] {
+  const seen = new Set(shown.flatMap(wordsOf));
+  const there = (w: string) => seen.has(w) || (w.length >= 4 && [...seen].some((s) => similarity(w, s) >= 0.8));
+  const missing = (lock.words ?? []).map((line) => ({ line, gone: wordsOf(line).filter((w) => !there(w)) })).filter((m) => m.gone.length);
+  if (!missing.length) return [];
+  return [{
+    rule: "approved-words",
+    kind: "error",
+    message: `Approved words missing from the design: ${missing.map((m) => `"${short(m.line)}" (${m.gone.join(", ")})`).join("; ")}. The person approved these words: put them in, or ask before changing them.`,
+    source: `the words approved in the "${lock.name}" lock`,
   }];
 }
 

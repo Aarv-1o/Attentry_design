@@ -4,6 +4,7 @@
 // attentry-design hook                   Claude Code's hooks (stage 1, the brief)
 // attentry-design mcp                    the stage tools for the agent
 import { parseArgs } from "node:util";
+import { readFile } from "node:fs/promises";
 import { closeBrowser } from "./render.ts";
 import { closeRemotion } from "./remotion.ts";
 import { closeOcr } from "./lettering.ts";
@@ -13,15 +14,21 @@ import { runMcpServer } from "./mcp.ts";
 
 const USAGE = `Usage:
   attentry-design options <file> <file> [… up to 5] [--out sheet.png]
-  attentry-design lock <file> --name <name> [--style "pixel art"]
+  attentry-design lock <file> --name <name> [--style "pixel art"] [--words script.txt]
   attentry-design check <file> [--lock <name>]
   attentry-design video-options <entry> <composition> <composition> [… up to 5]
-  attentry-design video-lock <entry> <composition> --name <name>
+  attentry-design video-lock <entry> <composition> --name <name> [--words script.txt]
   attentry-design video-check <entry> <composition> [--lock <name>]
   attentry-design hook | mcp      (for Claude Code)
 Options: --size WxH (for HTML pages; SVGs use their own size), --json`;
 
 const project = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
+
+/** The approved words from a text file: one line each, blank lines skipped. */
+async function wordsFile(file?: string): Promise<string[] | undefined> {
+  if (!file) return undefined;
+  return (await readFile(file, "utf8")).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+}
 
 async function main(argv: string[]): Promise<number> {
   const { positionals, values } = parseArgs({
@@ -32,6 +39,7 @@ async function main(argv: string[]): Promise<number> {
       name: { type: "string" },
       lock: { type: "string" },
       style: { type: "string" },
+      words: { type: "string" },
       size: { type: "string" },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
@@ -51,7 +59,7 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     case "lock":
       if (files.length !== 1 || !values.name) throw new Error("lock takes one file and --name.");
-      print(await runLock(project, files[0], values.name, size, values.style));
+      print(await runLock(project, files[0], values.name, size, values.style, await wordsFile(values.words)));
       return 0;
     case "check": {
       if (files.length !== 1) throw new Error("check takes one file.");
@@ -66,7 +74,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case "video-lock":
       if (files.length !== 2 || !values.name) throw new Error("video-lock takes an entry, a composition and --name.");
-      print(await runVideoLock(project, files[0], files[1], values.name, values.style));
+      print(await runVideoLock(project, files[0], files[1], values.name, values.style, await wordsFile(values.words)));
       return 0;
     case "video-check": {
       if (files.length !== 2) throw new Error("video-check takes an entry and a composition.");

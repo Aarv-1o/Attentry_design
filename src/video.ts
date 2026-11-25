@@ -5,7 +5,7 @@ import sharp from "sharp";
 import type { TextBox } from "./render.ts";
 import type { Composition, VideoFrame } from "./remotion.ts";
 import { labPixels, layoutDistance } from "./measure.ts";
-import { contrastFinding, edge, offLock, pixelEdges, short, tension } from "./check.ts";
+import { approvedWords, contrastFinding, edge, offLock, pixelEdges, short, tension } from "./check.ts";
 import type { DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
 
@@ -147,6 +147,7 @@ export async function checkVideo(c: Composition, frames: VideoFrame[], lock?: De
 
   if (lock) {
     findings.push(...offLock(frames.flatMap((f) => f.colors), fonts, lock));
+    findings.push(...approvedWords(lock, frames.flatMap((f) => f.texts.filter((t) => t.opacity >= SEEN).map((t) => t.text))));
     const middle = frames[Math.floor(frames.length / 2)];
     if (middle) findings.push(...(await pixelEdges(picture(middle), lock)));
   }

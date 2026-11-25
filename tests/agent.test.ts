@@ -32,6 +32,13 @@ test("the brief walks through the stages; a quick request goes straight to the c
   assert.ok(!quick?.includes("check_options"));
   const video = await brief("create a launch video", project);
   assert.ok(video?.includes("storyboard"));
+  // The words carry the message: approved before drawing, and held by the lock.
+  assert.match(full!, /the headline, every label/);
+  assert.match(video!, /the script, every caption/);
+  for (const b of [full!, video!]) {
+    assert.match(b, /wait for a yes or changes before drawing/);
+    assert.match(b, /the approved words/);
+  }
 });
 
 test("in a Remotion project, a video brief asks for compositions and the video tools", async () => {

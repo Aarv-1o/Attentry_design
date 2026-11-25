@@ -95,6 +95,23 @@ test("lock: the locked design passes; a drifted one is caught for color and font
   assert.ok(found.includes("off-lock-fonts"));
 });
 
+test("lock: approved words missing from the design are an error, wherever the line is split", async () => {
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  const labels = await load("flat-labels.svg");
+  await writeLock(project, "labels", labels, await measure(labels.png), undefined, ["GitHub", "Branches and pull requests", "Reviews"]);
+  const lock = await readLock(project, "labels");
+  assert.equal(lock.words?.length, 3);
+  // "Branches" and "Pull requests" are separate texts, and "and" is in neither.
+  const found = (await check(labels, await measure(labels.png), lock)).filter((f) => f.rule === "approved-words");
+  assert.equal(found.length, 1);
+  assert.match(found[0].message, /"Branches and pull requests" \(and\)/);
+  assert.doesNotMatch(found[0].message, /GitHub|Reviews/);
+  // Every approved word on screen: nothing.
+  const ok = await readLock(project, "labels");
+  ok.words = ["GitHub", "Branches", "Pull requests", "Reviews"];
+  assert.ok(!(await check(labels, await measure(labels.png), ok)).some((f) => f.rule === "approved-words"));
+});
+
 test("check: four texts at one size have no hierarchy; a clear headline does", async () => {
   assert.ok((await rules("flat-labels.svg")).includes("no-hierarchy"));
   assert.ok(!(await rules("invite-steelyard.svg")).includes("no-hierarchy")); // 2 texts: nothing to rank

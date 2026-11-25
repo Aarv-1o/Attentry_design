@@ -8,6 +8,11 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    (hand-drawn, flat vector, isometric, 3D look, pixel art, or another), the exact text, the mood, and anything it must
    have or avoid. If they skip or decline the questions, don't stop: choose sensible answers
    yourself, state them in one line, and go on to the options, where they choose by looking.
+   **Then the words**, which carry the message: for a video the script (every caption or spoken
+   line, in order, with about how long it stays up); for a picture the headline and every label.
+   If the person gave them, use them word for word. If not, draft them from the single message,
+   show them in the chat as a plain list, and wait for a yes or changes before drawing. Don't skip
+   this, even when the questions were skipped: a picture can't rescue words that don't say it.
 2. **Options.** Draw 2–5 small options as separate SVG or HTML files (for a video, one storyboard
    file per option with 4–6 key frames). Make them differ in composition, value plan and palette,
    in how they explain the idea (one scene, a before and after, a flow), and in style if the
@@ -22,7 +27,8 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    as a flow with arrows (Roam's <6><6> rule). Size the main characters by the smallest part that
    must read (an expression, a gesture). Give an explaining picture a title and label its parts;
    keep text and shapes clearly away from edges or clearly overlapping them, never just touching. Pixel art: one pixel grid, no doubled sprites (mixels).
-3. **Lock.** Call `lock_design` with the chosen file, a short name and the style. A pixel-art lock
+3. **Lock.** Call `lock_design` with the chosen file, a short name, the style and the approved
+   words (one line each); the check then flags any approved word missing from the design. A pixel-art lock
    is checked for pixel-sharp edges.
 4. **Finish.** Make it full size and call `check_design` with the file and the lock. Fix the
    errors. Mention the suggestions; don't force them.

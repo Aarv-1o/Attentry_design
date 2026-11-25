@@ -50,16 +50,16 @@ async function optionsOf(project: string, rendered: Rendered[], out?: string): P
   };
 }
 
-export async function runLock(project: string, file: string, name: string, size: RenderOptions = {}, style?: string): Promise<StageResult> {
-  return lockOf(project, await render(inProject(project, file), size), name, style);
+export async function runLock(project: string, file: string, name: string, size: RenderOptions = {}, style?: string, words?: string[]): Promise<StageResult> {
+  return lockOf(project, await render(inProject(project, file), size), name, style, words);
 }
 
-async function lockOf(project: string, rendered: Rendered, name: string, style?: string): Promise<StageResult> {
+async function lockOf(project: string, rendered: Rendered, name: string, style?: string, words?: string[]): Promise<StageResult> {
   const m = await measure(rendered.png);
-  const path = await writeLock(project, name, rendered, m, style);
+  const path = await writeLock(project, name, rendered, m, style, words);
   const lock = await readLock(project, name);
   return {
-    text: `Locked "${name}"${style ? ` (${style})` : ""} from ${shown(project, rendered.file)} (${shown(project, path)}): colors ${lock.colors.join(", ")}; fonts ${lock.fonts.join(", ") || "none"}; ${lock.size.width}×${lock.size.height}. Check the finished design with check_design and lock "${name}".`,
+    text: `Locked "${name}"${style ? ` (${style})` : ""} from ${shown(project, rendered.file)} (${shown(project, path)}): colors ${lock.colors.join(", ")}; fonts ${lock.fonts.join(", ") || "none"}; ${lock.size.width}×${lock.size.height}${lock.words ? `; ${lock.words.length} approved line${lock.words.length === 1 ? "" : "s"} of words` : ""}. Check the finished design with check_design and lock "${name}".`,
     findings: [],
     data: { lock: path },
   };
@@ -127,11 +127,11 @@ export async function runVideoOptions(project: string, entry: string, ids: strin
   });
 }
 
-export async function runVideoLock(project: string, entry: string, id: string, name: string, style?: string): Promise<StageResult> {
+export async function runVideoLock(project: string, entry: string, id: string, name: string, style?: string, words?: string[]): Promise<StageResult> {
   return withVideo(project, entry, async (remotion, find) => {
     const c = find(id);
     // The lock keeps the video's own size, not the storyboard's.
-    return lockOf(project, { ...(await storyboardOf(project, entry, remotion, c)), width: c.width, height: c.height }, name, style);
+    return lockOf(project, { ...(await storyboardOf(project, entry, remotion, c)), width: c.width, height: c.height }, name, style, words);
   });
 }
 
