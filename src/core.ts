@@ -5,7 +5,7 @@ import { closeBrowser } from "./render.ts";
 import { closeRemotion } from "./remotion.ts";
 import { closeOcr } from "./lettering.ts";
 
-export { runCheck, runLock, runOptions, runVideoCheck, runVideoLock, runVideoOptions, type StageResult } from "./stages.ts";
+export { runCheck, runLock, runOptions, runPreview, runVideoCheck, runVideoLock, runVideoOptions, runVideoPreview, type StageResult } from "./stages.ts";
 
 /** Closes the browser, the Remotion bundle server and the OCR worker. */
 export async function closeAll(): Promise<void> {

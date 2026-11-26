@@ -82,7 +82,7 @@ test("the plugin's committed build matches the source (a GitHub install gets it 
   assert.equal(code, 0, said);
 });
 
-test("MCP: the six tools are listed and check_options answers with a contact sheet", { timeout: 60_000 }, async () => {
+test("MCP: the nine tools are listed and check_options answers with a contact sheet", { timeout: 60_000 }, async () => {
   const project = await mkdtemp(join(tmpdir(), "ad-"));
   for (const f of ["invite-centered.svg", "invite-centered-again.svg"]) await copyFile(join(import.meta.dirname, "fixtures", f), join(project, f));
   const server = spawn(process.execPath, ["--import", "tsx", join(import.meta.dirname, "..", "src", "cli.ts"), "mcp"], {
@@ -106,7 +106,7 @@ test("MCP: the six tools are listed and check_options answers with a contact she
     await ask("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "0" } });
     server.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
     const tools = (await ask("tools/list", {})).result.tools.map((t: { name: string }) => t.name).sort();
-    assert.deepEqual(tools, ["check_design", "check_options", "check_video", "check_video_options", "lock_design", "lock_video"]);
+    assert.deepEqual(tools, ["check_design", "check_options", "check_video", "check_video_options", "lock_design", "lock_video", "preview_design", "preview_video", "restore_version"]);
 
     const result = (await ask("tools/call", { name: "check_options", arguments: { files: ["invite-centered.svg", "invite-centered-again.svg"] } })).result;
     const text = result.content[0].text as string;
@@ -116,6 +116,15 @@ test("MCP: the six tools are listed and check_options answers with a contact she
     // The running marker the editor panel watches is gone once the tool has answered.
     await assert.rejects(access(join(project, ".attentry-design", "running.json")));
     assert.equal(JSON.parse(await readFile(join(project, ".attentry-design", "last-run.json"), "utf8")).tool, "check_options");
+
+    // The finished check hands over its render, so the agent can look at what it made.
+    const checked = (await ask("tools/call", { name: "check_design", arguments: { file: "invite-centered.svg" } })).result.content[0].text as string;
+    assert.match(checked, /Render: \.attentry-design\/renders\/invite-centered\.png/);
+    await access(join(project, ".attentry-design", "renders", "invite-centered.png"));
+
+    // A preview only renders: no findings, just the picture to look at.
+    const preview = (await ask("tools/call", { name: "preview_design", arguments: { file: "invite-centered.svg" } })).result.content[0].text as string;
+    assert.match(preview, /^Render: \.attentry-design\/renders\/invite-centered\.png \(600×800\)/);
 
     const tooMany = (await ask("tools/call", { name: "check_options", arguments: { files: ["a", "b", "c", "d", "e", "f"] } })).result;
     assert.equal(tooMany.isError, true);

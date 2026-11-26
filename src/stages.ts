@@ -1,16 +1,17 @@
 // The three stages that do work (options, lock, finish), as the command line and the MCP tools
 // both run them. Each returns the text the person or the agent reads, plus the data behind it.
-import { mkdir } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { render, type RenderOptions } from "./render.ts";
 import { measure } from "./measure.ts";
 import { compareOptions, contactSheet } from "./options.ts";
-import { LOCK_DIR, readLock, writeLock } from "./lock.ts";
+import { LOCK_DIR, readLock, writeLock, type About } from "./lock.ts";
 import { check } from "./check.ts";
 import { format, type Finding } from "./findings.ts";
 import { RemotionProject, sampleFrames, type Composition } from "./remotion.ts";
 import { checkVideo, keyFrames, STEP, storyboard } from "./video.ts";
 import type { Rendered } from "./render.ts";
+import { renderPath } from "./versions.ts";
 
 export interface StageResult {
   text: string;
@@ -50,13 +51,13 @@ async function optionsOf(project: string, rendered: Rendered[], out?: string): P
   };
 }
 
-export async function runLock(project: string, file: string, name: string, size: RenderOptions = {}, style?: string, words?: string[]): Promise<StageResult> {
-  return lockOf(project, await render(inProject(project, file), size), name, style, words);
+export async function runLock(project: string, file: string, name: string, size: RenderOptions = {}, style?: string, words?: string[], about: About = {}): Promise<StageResult> {
+  return lockOf(project, await render(inProject(project, file), size), name, style, words, about);
 }
 
-async function lockOf(project: string, rendered: Rendered, name: string, style?: string, words?: string[]): Promise<StageResult> {
+async function lockOf(project: string, rendered: Rendered, name: string, style?: string, words?: string[], about: About = {}): Promise<StageResult> {
   const m = await measure(rendered.png);
-  const path = await writeLock(project, name, rendered, m, style, words);
+  const path = await writeLock(project, name, rendered, m, style, words, about);
   const lock = await readLock(project, name);
   return {
     text: `Locked "${name}"${style ? ` (${style})` : ""} from ${shown(project, rendered.file)} (${shown(project, path)}): colors ${lock.colors.join(", ")}; fonts ${lock.fonts.join(", ") || "none"}; ${lock.size.width}×${lock.size.height}${lock.words ? `; ${lock.words.length} approved line${lock.words.length === 1 ? "" : "s"} of words` : ""}. Check the finished design with check_design and lock "${name}".`,
@@ -69,13 +70,30 @@ export async function runCheck(project: string, file: string, lockName?: string,
   const rendered = await render(inProject(project, file), size);
   const lock = lockName ? await readLock(project, lockName) : undefined;
   const r = report(shown(project, rendered.file), await check(rendered, await measure(rendered.png), lock));
+  // The render, as the checks saw it: agents often never look at what they made, so it's handed over.
+  const picture = await saveRender(project, rendered.file, rendered.png);
   return { ...r, text: `${r.text}
-${LOOK}` };
+Render: ${shown(project, picture)}
+${LOOK}`, data: { ...r.data, render: picture } };
+}
+
+async function saveRender(project: string, file: string, png: Buffer): Promise<string> {
+  const picture = renderPath(project, file);
+  await mkdir(dirname(picture), { recursive: true });
+  await writeFile(picture, png);
+  return picture;
+}
+
+/** Only the render, to look at: no checks, so nothing is flagged that wasn't asked about. */
+export async function runPreview(project: string, file: string, size: RenderOptions = {}): Promise<StageResult> {
+  const rendered = await render(inProject(project, file), size);
+  const picture = await saveRender(project, rendered.file, rendered.png);
+  return { text: `Render: ${shown(project, picture)} (${rendered.width}×${rendered.height}). Open it and look.`, findings: [], data: { render: picture } };
 }
 
 // What no measurement can judge: meaning. Said after every check, so "no findings" isn't taken as
 // "done".
-const LOOK = "Now look at the render yourself: does each part say its message to someone who doesn't already know it, and can every word be read at phone size? Fix what doesn't; in the design card, name any part that may still not get its message across.";
+const LOOK = "Now open the render above and look at it yourself: does each part say its message to someone who doesn't already know it, and can every word be read at phone size? Fix what doesn't; in the design card, name any part that may still not get its message across.";
 
 function report(what: string, findings: Finding[]): StageResult {
   const errors = findings.filter((f) => f.kind === "error").length;
@@ -120,6 +138,19 @@ async function storyboardOf(project: string, entry: string, remotion: RemotionPr
   };
 }
 
+/** A frame of a video at full size, or several (the key frames when none are named) as a strip. */
+export async function runVideoPreview(project: string, entry: string, id: string, seconds: number[] = []): Promise<StageResult> {
+  return withVideo(project, entry, async (remotion, find) => {
+    const c = find(id);
+    const at = seconds.length ? seconds.map((s) => Math.max(0, Math.min(c.durationInFrames - 1, Math.round(s * c.fps)))) : keyFrames(c);
+    const frames = await remotion.frames(c, at);
+    const png = frames.length === 1 ? frames[0].png : (await storyboard(c, frames)).png;
+    const picture = await saveRender(project, `${c.id}.png`, png);
+    const when = at.map((f) => `${(f / c.fps).toFixed(2)} s`).join(", ");
+    return { text: `Render: ${shown(project, picture)} (${frames.length === 1 ? "the frame" : "frames"} at ${when}). Open it and look.`, findings: [], data: { render: picture } };
+  });
+}
+
 export async function runVideoOptions(project: string, entry: string, ids: string[], out?: string): Promise<StageResult> {
   return withVideo(project, entry, async (remotion, find) => {
     const boards: Rendered[] = [];
@@ -128,11 +159,11 @@ export async function runVideoOptions(project: string, entry: string, ids: strin
   });
 }
 
-export async function runVideoLock(project: string, entry: string, id: string, name: string, style?: string, words?: string[]): Promise<StageResult> {
+export async function runVideoLock(project: string, entry: string, id: string, name: string, style?: string, words?: string[], about: About = {}): Promise<StageResult> {
   return withVideo(project, entry, async (remotion, find) => {
     const c = find(id);
     // The lock keeps the video's own size, not the storyboard's.
-    return lockOf(project, { ...(await storyboardOf(project, entry, remotion, c)), width: c.width, height: c.height }, name, style, words);
+    return lockOf(project, { ...(await storyboardOf(project, entry, remotion, c)), width: c.width, height: c.height }, name, style, words, about);
   });
 }
 
