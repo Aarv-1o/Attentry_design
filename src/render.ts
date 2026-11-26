@@ -11,6 +11,7 @@ export interface Box {
   y: number;
   width: number;
   height: number;
+  what?: string; // a shape: what it is, for a message that has to name it ("rect filled rgb(…)")
 }
 
 export interface TextBox {
@@ -113,7 +114,29 @@ export const READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
   const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [], rings = [], images = [];
-  const panel = (r) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height }); };
+  const panel = (r, what) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height, what }); };
+  // Whether a color is set (attribute or style) on the element or a parent, up to stop.
+  const setOn = (el, k, stop) => {
+    for (let e = el; e && e !== stop; e = e.parentElement) if (e.hasAttribute(k) || (e.style && e.style.getPropertyValue(k) !== "")) return true;
+    return false;
+  };
+  const hasInside = (el) => {
+    const tag = el.tagName.toLowerCase();
+    if (tag !== "path" && tag !== "polyline") return true;
+    try {
+      const b = el.getBBox();
+      const point = el.ownerSVGElement.createSVGPoint();
+      for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) {
+        point.x = b.x + (b.width * i) / 8;
+        point.y = b.y + (b.height * j) / 8;
+        if (el.isPointInFill(point)) return true;
+      }
+      return false;
+    } catch {
+      return true; // no geometry to ask about: count its fill, as before
+    }
+  };
+  const describe = (tag, style) => [tag, visible(style.fill) && !style.fill.startsWith("url(") ? "filled " + style.fill : visible(style.fill) ? "filled with a gradient" : "", visible(style.stroke) && parseFloat(style.strokeWidth) > 0 ? "outlined " + style.stroke : ""].filter(Boolean).join(" ");
   const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
   const opacityOf = (el) => { let o = 1; for (let e = el; e; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
@@ -165,15 +188,22 @@ export const READ_DESIGN = `(() => {
       continue;
     }
     if (svg && PAINTS.has(el.tagName.toLowerCase())) {
-      // A <line> has no inside, so its fill (black by default) is never painted.
-      const paints = el.tagName.toLowerCase() === "line" ? [style.stroke] : [style.fill, style.stroke];
+      // A <line> has no inside, so its fill (black by default) is never painted; nor has a path or
+      // polyline that is only strokes (a straight dash), which the browser says covers no point.
+      // Colors that are set somewhere count; the default black that nothing set doesn't. A shape in
+      // <defs> takes unset colors from where it's used, so there only its own count; a <use> paints
+      // nothing itself but passes down the colors set on it or around it.
+      const tag0 = el.tagName.toLowerCase();
+      const defs = el.closest("defs, symbol");
+      const kinds = tag0 === "line" || !hasInside(el) ? ["stroke"] : ["fill", "stroke"];
+      const paints = kinds.filter((k) => (tag0 === "use" || defs ? setOn(el, k, defs ? defs.parentElement : null) : true)).map((k) => style[k]);
       for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
       const r = el.getBoundingClientRect();
       const tag = el.tagName.toLowerCase();
       // Text is what sits in a panel, never the panel: a <text> would "hold" its own colored <tspan>.
-      if (tag !== "text" && tag !== "tspan" && tag !== "textpath") panel(r);
+      if (tag !== "text" && tag !== "tspan" && tag !== "textpath") panel(r, describe(tag, style));
       if ((tag === "circle" || tag === "ellipse") && visible(style.stroke) && parseFloat(style.strokeWidth) > 0 && r.width > 4 && rings.length < 100) {
-        rings.push({ x: r.x, y: r.y, width: r.width, height: r.height });
+        rings.push({ x: r.x, y: r.y, width: r.width, height: r.height, what: describe(tag, style) });
       }
       const small = r.width * r.height < 0.02 * vw * vh;
       if (small && r.width > 0 && (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) && cut.length < 200) {
@@ -215,7 +245,7 @@ export const READ_DESIGN = `(() => {
         const s = getComputedStyle(e);
         if (visible(s.backgroundColor) || (parseFloat(s.borderTopWidth) > 0 && visible(s.borderTopColor))) {
           const b = shown(e, e.getBoundingClientRect());
-          if (b && b.width * b.height < 0.9 * vw * vh) holder = b;
+          if (b && b.width * b.height < 0.9 * vw * vh) holder = { ...b, what: e.tagName.toLowerCase() + (visible(s.backgroundColor) ? " with background " + s.backgroundColor : " with a border " + s.borderTopColor) };
           break;
         }
       }

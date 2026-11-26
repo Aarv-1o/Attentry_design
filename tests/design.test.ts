@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { closeBrowser, render, type Rendered } from "../src/render.ts";
 import { measure } from "../src/measure.ts";
 import { compareOptions, contactSheet, MAX_OPTIONS } from "../src/options.ts";
-import { readLock, writeLock } from "../src/lock.ts";
+import { readLock, toHex, writeLock } from "../src/lock.ts";
 import { check } from "../src/check.ts";
 import { closeOcr } from "../src/lettering.ts";
 
@@ -35,6 +35,13 @@ test("render reads an SVG's size, painted colors, fonts and text", async () => {
 test("render: a line's unpainted default fill isn't a color in the design", async () => {
   const r = await load("divider-line.svg");
   assert.deepEqual(r.colors.sort(), ["rgb(217, 164, 65)", "rgb(43, 33, 24)"]);
+});
+
+test("render: the default black nothing set isn't a color (a dash's fill, a shape in defs, a use)", async () => {
+  const r = await load("defs-uses.svg");
+  const hex = new Set(r.colors.map((c) => toHex(c)));
+  assert.ok(!hex.has("#000000"), [...hex].join(" "));
+  for (const c of ["#2b160c", "#f2a65a", "#d88a3c", "#fbe7c6", "#e8c9a0"]) assert.ok(hex.has(c), c);
 });
 
 test("options: two copies of the default invitation are flagged on every axis", async () => {
@@ -221,6 +228,11 @@ test("murk: a scene with nothing lit is named; a dark night with a lit window an
   assert.ok(murky.includes("murk"));
   assert.ok(!murky.includes("middle-values"), "murk says it more exactly");
   for (const name of ["night-lit.svg", "invite-diagonal.svg", "banded-sky.svg"]) assert.ok(!(await rules(name)).includes("murk"), name);
+  // Dark on purpose: a lock whose mood is dark keeps murk from being suggested.
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  const dark = await load("murky.svg");
+  await writeLock(project, "space", dark, await measure(dark.png), undefined, undefined, { mood: "dark and tense" });
+  assert.ok(!(await check(dark, await measure(dark.png), await readLock(project, "space"))).some((f) => f.rule === "murk"));
 });
 
 test("banding: a sky of faint stacked bands is named; a real gradient and flat shapes aren't", async () => {

@@ -2,12 +2,12 @@
 // look, offered as suggestions. Each rule names where it comes from.
 import sharp from "sharp";
 import { converter, differenceEuclidean, wcagContrast, wcagLuminance } from "culori";
-import type { Rendered, TextBox } from "./render.ts";
+import type { Box, Rendered, TextBox } from "./render.ts";
 import type { Measures } from "./measure.ts";
 import { toHex, type DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
 import { findLettering, readBack, similarity } from "./lettering.ts";
-import { STYLE_3D } from "./limits.ts";
+import { DARK_MOOD, STYLE_3D } from "./limits.ts";
 
 const SAFE_MARGIN = 0.04; // of the shorter side
 
@@ -72,7 +72,7 @@ export async function check(rendered: Rendered, m: Measures, lock?: DesignLock):
       source: "Bang, Picture This, principle 5; Payne p. 38; Loomis p. 46",
     });
   }
-  if (m.murky) {
+  if (m.murky && !DARK_MOOD.test(lock?.mood ?? "")) {
     findings.push({
       rule: "murk",
       kind: "default",
@@ -388,13 +388,13 @@ export function tension(r: Pick<Rendered, "panels" | "rings">, texts: TextBox[])
   for (const t of texts.filter((t) => t.source !== "ocr")) {
     // A circle's or ellipse's curve running through the text: some points of the text's box fall
     // inside the curve and some outside (a ring drawn around an icon that cuts its label).
-    const crossed = r.rings.some((g) => {
+    const crossed = r.rings.find((g) => {
       const cx = g.x + g.width / 2, cy = g.y + g.height / 2, rx = g.width / 2, ry = g.height / 2;
       const pts = [0, 0.5, 1].flatMap((u) => [0, 0.5, 1].map((v) => [t.box.x + u * t.box.width, t.box.y + v * t.box.height]));
       const d = pts.map(([x, y]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2);
       return Math.min(...d) < 1 && Math.max(...d) > 1;
     });
-    if (crossed) { tight.push(what(t)); continue; }
+    if (crossed) { tight.push(`${what(t)}: the curve of the ${shape(crossed)} runs through it`); continue; }
     const cx = t.box.x + t.box.width / 2, cy = t.box.y + t.box.height / 2;
     // HTML text knows its holder from the DOM; SVG text, beside its shapes rather than inside
     // them, takes the smallest painted shape around its middle that is bigger than itself.
@@ -404,15 +404,22 @@ export function tension(r: Pick<Rendered, "panels" | "rings">, texts: TextBox[])
     if (!holder) continue;
     const near = Math.max(2, 0.2 * t.box.height); // a hair: a fifth of the text's height
     const gaps = [t.box.x - holder.x, holder.x + holder.width - (t.box.x + t.box.width), t.box.y - holder.y, holder.y + holder.height - (t.box.y + t.box.height)];
-    if (gaps.some((g) => Math.abs(g) < near)) tight.push(what(t));
+    const side = gaps.map((g, i) => ({ g, i })).filter(({ g }) => Math.abs(g) < near).sort((a, b) => Math.abs(a.g) - Math.abs(b.g))[0];
+    if (side) tight.push(`${what(t)}: ${Math.round(Math.abs(side.g))} px from the ${["left", "right", "top", "bottom"][side.i]} edge of the ${shape(holder)}`);
   }
   if (!tight.length) return [];
   return [{
     rule: "visual-tension",
     kind: "default",
-    message: `${tight.join(", ")} ${tight.length === 1 ? "almost touches" : "almost touch"} the edge of the shape around ${tight.length === 1 ? "it" : "them"}. Give clear room inside, or let it clearly overlap the edge.`,
+    message: `Almost touching the edge of a shape: ${tight.join("; ")}. Give clear room inside, or let it clearly overlap the edge.`,
     source: "Glitschka, Vector Basic Training pp. 189–191 (visual tension)",
   }];
+}
+
+/** A shape, named so it can be found: what it is and its colors, its size and where it sits. */
+function shape(b: Box): string {
+  const named = (b.what ?? "shape").replace(/rgba?\([^)]*\)/g, (c) => toHex(c) ?? c);
+  return `${named} (${Math.round(b.width)}×${Math.round(b.height)} at ${Math.round(b.x)}, ${Math.round(b.y)})`;
 }
 
 const SAME_SIZE = 1.05; // sizes this close are one size (rounding, a tspan)

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <!-- No fill of its own: it takes the color set where it's used. -->
+    <path id="star" d="M0 -16 Q2 -2 16 0 Q2 2 0 16 Q-2 2 -16 0 Q-2 -2 0 -16Z"/>
+    <g id="bun"><path d="M-40 0 C-40 -30 40 -30 40 0 Z" fill="#d88a3c"/><path d="M-10 -12 l10 -4" stroke="#fbe7c6" stroke-width="4"/></g>
+  </defs>
+  <rect width="400" height="300" fill="#2b160c"/>
+  <g fill="#f2a65a"><use href="#star" transform="translate(60 60)"/></g>
+  <use href="#bun" transform="translate(200 180)"/>
+  <path d="M300 80 l20 -6" stroke="#e8c9a0" stroke-width="4"/>
+</svg>
