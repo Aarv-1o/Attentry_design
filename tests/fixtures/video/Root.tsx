@@ -122,6 +122,19 @@ const ImagePromo = () => (
   </AbsoluteFill>
 );
 
+// A caption up 3.4 s with 8-frame fades on both ends: legible (over half opacity) from frame 19 to
+// 113, 3.13 s, for 50 characters that need 2.94 s. Counted in whole quarter-second samples, the
+// fades and the 0.267 s sample gap made it look short.
+const FadedCaption = () => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [15, 23, 109, 117], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill style={{ background: "#f5f1e8", fontFamily: font }}>
+      <div style={{ position: "absolute", left: 200, top: 460, fontSize: 64, color: "#1d2a33", opacity }}>Every route is checked before the change is merged</div>
+    </AbsoluteFill>
+  );
+};
+
 export const Root = () => (
   <>
     <Composition id="BadPromo" component={BadPromo} {...common} />
@@ -133,5 +146,6 @@ export const Root = () => (
     <Composition id="SmallCtaPromo" component={SmallCtaPromo} {...common} />
     <Composition id="LogoPromo" component={LogoPromo} {...common} />
     <Composition id="ImagePromo" component={ImagePromo} {...common} />
+    <Composition id="FadedCaption" component={FadedCaption} {...common} durationInFrames={150} />
   </>
 );

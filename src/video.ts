@@ -9,9 +9,13 @@ import { contrastFinding, edge, offLock, pixelEdges, scriptLine, short, sizeStep
 import { findLettering } from "./lettering.ts";
 import type { DesignLock } from "./lock.ts";
 import type { Finding } from "./findings.ts";
+import { DARK_MOOD, NO_ASK } from "./limits.ts";
 
 export const STEP = 0.25; // seconds between sampled frames (as the baseline was sampled)
 const SEEN = 0.95; // opacity from which a text counts as fully shown
+// Opacity from which a fading text can already be read: reading time counts from here, so a fade
+// in or out isn't taken off the time a line is up.
+const LEGIBLE = 0.5;
 const MIN_SIZE = 0.022; // of frame height: 24 px on 1080 (R1)
 const CAPTION_SIZE = 0.037; // 40 px on 1080: a caption this big carries the message (R1)
 const VIDEO_MARGIN = 0.05; // 54 px on 1080 (L1)
@@ -29,25 +33,14 @@ export async function checkVideo(c: Composition, frames: VideoFrame[], lock?: De
   const findings: Finding[] = [];
   const picture = (f: VideoFrame) => ({ png: f.png, width: c.width, height: c.height });
 
-  // Each distinct text the viewer is meant to read, with the frames where it's fully shown.
-  const texts = new Map<string, { frame: VideoFrame; box: TextBox }[]>();
-  frames.forEach((f, i) => {
-    const visible = f.texts.filter((t) => t.opacity >= SEEN);
-    // A frame crowded with text (a whole IDE, a web page) is texture: only caption-sized text in it
-    // carries the message (rules R1, "must not flag").
-    const crowded = visible.length > CROWDED;
-    for (const t of visible) {
-      if (crowded && t.size / c.height < CAPTION_SIZE) continue;
-      if ((t.text.match(/[\p{L}\p{N}]/gu) ?? []).length < 2) continue; // a cursor, a lone symbol
-      if (inBetween(t, frames[i + 1])) continue; // a typed line or a counter, still changing
-      texts.set(t.text, [...(texts.get(t.text) ?? []), { frame: f, box: t }]);
-    }
-  });
-
+  // Each distinct text the viewer is meant to read, with the frames where it's fully shown (for its
+  // size and contrast) and where it can be read at all (for its time).
+  const texts = readable(frames, SEEN, c);
+  const timed = readable(frames, LEGIBLE, c);
   // R3: each text's longest run of samples where it's shown and holds still. Lines that come on
   // screen together (a title and its subtitle, a card) are read together, so they're timed as one.
   const index = new Map(frames.map((f, i) => [f, i]));
-  const runs = [...texts].map(([text, seen]) => ({ text, seen, run: longestStillRun(seen, frames) }))
+  const runs = [...timed].map(([text, seen]) => ({ text, seen, run: longestStillRun(seen, frames) }))
     .filter((r) => r.run.length > 0)
     .map((r) => ({ ...r, start: index.get(r.run[0].frame)!, end: index.get(r.run.at(-1)!.frame)! }))
     .sort((a, b) => a.start - b.start);
@@ -68,9 +61,12 @@ export async function checkVideo(c: Composition, frames: VideoFrame[], lock?: De
   for (const g of groups) {
     const chars = g.reduce((n, r) => n + r.text.length, 0);
     const needed = Math.max(5 / 6, chars / 17);
-    // Readable as a whole from when the group appears to when its first line goes.
-    const shown = (Math.min(...g.map((r) => r.end)) - g[0].start + 1) * STEP;
-    if (shown >= needed) continue;
+    // Readable as a whole from when the group appears to when its first line goes, each moment found
+    // between the samples around it (see legibleEdge).
+    const leaving = g.reduce((a, b) => (b.end < a.end ? b : a));
+    const shown = legibleEdge(frames, leaving.text, leaving.end, 1) - legibleEdge(frames, g[0].text, g[0].start, -1);
+    // Still within half a sample's error: only a clear shortfall is named.
+    if (shown + sampleGap(frames) / 2 >= needed) continue;
     const what = g.length === 1 ? `"${short(g[0].text)}"` : `"${short(g[0].text)}" and ${g.length - 1} more line${g.length === 2 ? "" : "s"} shown with it`;
     findings.push({
       rule: "text-too-brief",
@@ -156,9 +152,10 @@ export async function checkVideo(c: Composition, frames: VideoFrame[], lock?: De
 
   // T1, T2, T3 and murk, from the frames' lightness.
   const looks = await Promise.all(frames.map(async (f) => (await labPixels(f.png, GRID)).map((p) => p.l)));
-  findings.push(...blankRuns(looks, frames, c), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c), ...murk(looks));
+  findings.push(...blankRuns(looks, frames, c), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c), ...(DARK_MOOD.test(lock?.mood ?? "") ? [] : murk(looks)));
 
-  findings.push(...callToAction(c, frames), ...(await letteringInImages(c, frames)));
+  // A tribute or homage asks nothing of the viewer: no call to action expected.
+  findings.push(...(NO_ASK.test(lock?.purpose ?? "") ? [] : callToAction(c, frames)), ...(await letteringInImages(c, frames)));
 
   if (lock) {
     findings.push(...offLock(frames.flatMap((f) => f.colors), fonts, lock));
@@ -213,7 +210,7 @@ function callToAction(c: Composition, frames: VideoFrame[]): Finding[] {
  */
 function approvedScript(lock: DesignLock, frames: VideoFrame[]): Finding[] {
   if (!lock.words?.length) return [];
-  const words = frames.map((f) => new Set(f.texts.filter((t) => t.opacity >= SEEN).flatMap((t) => wordsOf(t.text))));
+  const words = frames.map((f) => new Set(f.texts.filter((t) => t.opacity >= LEGIBLE).flatMap((t) => wordsOf(t.text))));
   const everywhere = new Set(words.flatMap((w) => [...w]));
   const missing: string[] = [], brief: string[] = [], first: { line: string; at: number }[] = [];
   for (const raw of lock.words) {
@@ -228,7 +225,7 @@ function approvedScript(lock: DesignLock, frames: VideoFrame[]): Finding[] {
     }
     first.push({ line: text, at });
     if (seconds) {
-      const longest = runs(on).reduce((m, [a, b]) => Math.max(m, (b - a + 1) * STEP), 0);
+      const longest = runs(on).reduce((m, [a, b]) => Math.max(m, frames[b].time - frames[a].time + sampleGap(frames)), 0);
       if (longest < seconds * 0.8) brief.push(`"${short(text)}" is up ${longest.toFixed(1)} s of the ${seconds} s approved`);
     }
   }
@@ -301,6 +298,45 @@ function inBetween(t: TextBox, next: VideoFrame | undefined): boolean {
     Math.abs(n.box.y - t.box.y) < 4 && n.box.x < t.box.x + t.box.width && t.box.x < n.box.x + n.box.width &&
     (n.text.startsWith(t.text) || (number.test(n.text) && number.test(t.text))),
   );
+}
+
+/** Seconds between two samples (8 frames at 30 fps is 0.267 s, not the STEP asked for). */
+const sampleGap = (frames: VideoFrame[]) => (frames.length > 1 ? frames[1].time - frames[0].time : STEP);
+
+/** How shown a text is in a frame: its opacity, 0 when it isn't there. */
+const opacityOf = (f: VideoFrame | undefined, text: string) => Math.max(0, ...(f?.texts.filter((t) => t.text === text).map((t) => t.opacity) ?? []));
+
+/**
+ * When a text became legible before sample `i` (side -1), or stopped being legible after it (side
+ * +1): the moment its opacity crosses LEGIBLE, found by interpolating between `i` and the sample
+ * beside it. A fade is timed to within a frame or two; a cut, to the middle of the gap.
+ */
+function legibleEdge(frames: VideoFrame[], text: string, i: number, side: -1 | 1): number {
+  const here = frames[i], there = frames[i + side];
+  if (!there) return here.time;
+  const a = opacityOf(here, text), b = opacityOf(there, text);
+  const share = a > b ? (a - LEGIBLE) / (a - b) : 0.5;
+  return here.time + share * (there.time - here.time);
+}
+
+/**
+ * Each distinct text the viewer is meant to read, with the frames where it's shown at least at
+ * `opacity`. A frame crowded with text (a whole IDE, a web page) is texture: only caption-sized
+ * text in it carries the message (rules R1, "must not flag").
+ */
+function readable(frames: VideoFrame[], opacity: number, c: Composition) {
+  const texts = new Map<string, { frame: VideoFrame; box: TextBox }[]>();
+  frames.forEach((f, i) => {
+    const visible = f.texts.filter((t) => t.opacity >= opacity);
+    const crowded = visible.length > CROWDED;
+    for (const t of visible) {
+      if (crowded && t.size / c.height < CAPTION_SIZE) continue;
+      if ((t.text.match(/[\p{L}\p{N}]/gu) ?? []).length < 2) continue; // a cursor, a lone symbol
+      if (inBetween(t, frames[i + 1])) continue; // a typed line or a counter, still changing
+      texts.set(t.text, [...(texts.get(t.text) ?? []), { frame: f, box: t }]);
+    }
+  });
+  return texts;
 }
 
 /** The longest stretch of consecutive samples where the text is shown and doesn't move. */

@@ -7,9 +7,9 @@
 // The bundle is made and served with the project's own @remotion/bundler and @remotion/renderer,
 // so the project's Remotion version and license apply; Attentry Design ships no Remotion of its own.
 import { createRequire } from "node:module";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readdir, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import type { Page } from "playwright-core";
 import { getBrowser, READ_DESIGN, type Box, type Rendered, type TextBox } from "./render.ts";
 
@@ -43,29 +43,61 @@ interface Served {
   close: () => Promise<unknown>;
 }
 
-const served = new Map<string, Promise<Served>>(); // entry → its server, once per process
+// entry → its server, and when its sources last changed: bundled again when they change since.
+const served = new Map<string, { changed: number; server: Promise<Served> }>();
+
+/**
+ * When anything in the entry's folder last changed (a new composition, an edit). node_modules and
+ * .git are skipped without being read: an entry file at a project's root sits beside them.
+ */
+async function lastChange(entryPoint: string): Promise<number> {
+  const newest = async (folder: string): Promise<number> => {
+    const entries = await readdir(folder, { withFileTypes: true });
+    const times = await Promise.all(entries.map(async (e) => {
+      if (e.name === "node_modules" || e.name === ".git") return 0;
+      const path = join(folder, e.name);
+      return e.isDirectory() ? newest(path) : (await stat(path)).mtimeMs;
+    }));
+    return Math.max(0, ...times);
+  };
+  return newest(dirname(entryPoint));
+}
 
 /**
  * Bundles the project with its own Remotion and serves the bundle with Remotion's own server, which
  * also extracts frames for <OffthreadVideo>. Slow the first time (webpack); reused after.
  */
-export function serveProject(project: string, entry: string): Promise<Served> {
+export async function serveProject(project: string, entry: string): Promise<Served> {
   const entryPoint = resolve(project, entry);
+  const changed = await lastChange(entryPoint);
+  const kept = served.get(entryPoint);
+  if (kept && kept.changed < changed) {
+    served.delete(entryPoint); // edited since it was bundled: bundle it again
+    void kept.server.then((s) => s.close(), () => undefined);
+  }
   if (!served.has(entryPoint)) {
-    served.set(entryPoint, (async () => {
-      const require = createRequire(join(project, "package.json"));
-      let bundler: typeof import("@remotion/bundler"), renderer: typeof import("@remotion/renderer");
-      try {
-        bundler = require("@remotion/bundler");
-        renderer = require("@remotion/renderer");
-      } catch {
-        throw new Error("This project has no @remotion/bundler and @remotion/renderer. Install Remotion in it (npm i @remotion/cli).");
-      }
+    const server = (async () => {
+      // The video's own Remotion: looked up from the entry file, the way the video's code finds it,
+      // so a video project inside the session's folder works; then from the session's folder.
+      const found = [entryPoint, join(project, "package.json")].map((from) => {
+        try {
+          const require = createRequire(from);
+          return { require, bundlerPath: require.resolve("@remotion/bundler") };
+        } catch {
+          return undefined; // no Remotion from here: try the next place
+        }
+      }).find(Boolean);
+      if (!found) throw new Error("This project has no @remotion/bundler and @remotion/renderer. Install Remotion in it (npm i @remotion/cli).");
+      const bundler: typeof import("@remotion/bundler") = found.require("@remotion/bundler");
+      const renderer: typeof import("@remotion/renderer") = found.require("@remotion/renderer");
+      // The video project's folder: the one whose node_modules holds its Remotion.
+      const at = found.bundlerPath.lastIndexOf(`${sep}node_modules${sep}`);
+      const remotionRoot = at >= 0 ? found.bundlerPath.slice(0, at) : project;
       const folder = await bundler.bundle({ entryPoint, outDir: await mkdtemp(join(tmpdir(), "attentry-design-bundle-")) });
       const server = await renderer.RenderInternals.prepareServer({
         webpackConfigOrServeUrl: folder,
         port: null,
-        remotionRoot: project,
+        remotionRoot,
         offthreadVideoThreads: 2,
         logLevel: "error",
         indent: false,
@@ -75,16 +107,19 @@ export function serveProject(project: string, entry: string): Promise<Served> {
         sampleRate: 48000,
       });
       return { url: server.serveUrl, proxyPort: server.offthreadPort, close: () => server.closeServer(true) };
-    })());
+    })();
+    // A failure isn't kept: the next call tries again, once the cause is fixed.
+    server.catch(() => served.delete(entryPoint));
+    served.set(entryPoint, { changed, server });
   }
-  return served.get(entryPoint)!;
+  return served.get(entryPoint)!.server;
 }
 
 /** Stops every Remotion server this process started. */
 export async function closeRemotion(): Promise<void> {
   const all = [...served.values()];
   served.clear();
-  await Promise.all(all.map(async (s) => (await s.catch(() => undefined))?.close()));
+  await Promise.all(all.map(async (s) => (await s.server.catch(() => undefined))?.close()));
 }
 
 export class RemotionProject {
