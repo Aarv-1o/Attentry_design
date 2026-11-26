@@ -9,17 +9,21 @@ var __export = (target, all) => {
 // src/plugin.ts
 import { spawn } from "node:child_process";
 import { createWriteStream, existsSync as existsSync2, readFileSync } from "node:fs";
-import { copyFile, mkdir as mkdir2, open as open2, readFile as readFile3, stat, unlink } from "node:fs/promises";
+import { copyFile as copyFile2, mkdir as mkdir4, open as open2, readFile as readFile5, stat, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join as join4 } from "node:path";
+import { dirname, join as join6 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 // src/hook.ts
 import { text } from "node:stream/consumers";
 
 // src/brief.ts
-import { readdir, readFile as readFile2 } from "node:fs/promises";
-import { join as join3 } from "node:path";
+import { readdir, readFile as readFile4 } from "node:fs/promises";
+import { join as join5 } from "node:path";
+
+// src/lock.ts
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 
 // node_modules/culori/src/rgb/parseNumber.js
 var parseNumber = (color, len) => {
@@ -3433,13 +3437,20 @@ var yiq = useMode(definition_default28);
 
 // src/lock.ts
 var LOCK_DIR = ".attentry-design";
+function lockPath(project2, name) {
+  if (!/^[\w-]+$/.test(name)) throw new Error("A lock name uses letters, digits, - and _ only.");
+  return join(project2, LOCK_DIR, `${name}.lock.json`);
+}
+async function readLock(project2, name) {
+  return JSON.parse(await readFile(lockPath(project2, name), "utf8"));
+}
 
 // src/limits.ts
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join as join2 } from "node:path";
 var MAX_OPTIONS = 5;
 var RUNTIME = ["sharp", "playwright-core", "tesseract.js", "@tesseract.js-data/eng"];
-var hasRuntime = (dir) => RUNTIME.every((p4) => existsSync(join(dir, "node_modules", p4, "package.json")));
+var hasRuntime = (dir) => RUNTIME.every((p4) => existsSync(join2(dir, "node_modules", p4, "package.json")));
 var INSTALLING = ".installing";
 var STYLE_3D = /\b(3d|three[- ]d)\b/i;
 function parseSize(s) {
@@ -3450,26 +3461,95 @@ function parseSize(s) {
 }
 
 // src/status.ts
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { join as join2 } from "node:path";
+import { access, mkdir as mkdir3, readFile as readFile3, rm, writeFile as writeFile2 } from "node:fs/promises";
+import { join as join4, resolve } from "node:path";
+
+// src/versions.ts
+import { copyFile, mkdir as mkdir2, readFile as readFile2 } from "node:fs/promises";
+import { basename, extname, join as join3 } from "node:path";
+var renderPath = (project2, file2) => join3(project2, LOCK_DIR, "renders", `${basename(file2, extname(file2))}.png`);
+var sameBytes = async (a, b) => (await readFile2(a)).equals(await readFile2(b));
+async function versionMatching(tree, file2) {
+  for (const v of tree.versions) if (await sameBytes(file2, v.snapshot).catch(() => false)) return v;
+  return void 0;
+}
+async function keepVersion(project2, lock, tree, file2, render) {
+  const same = await versionMatching(tree, file2);
+  if (same) {
+    tree.head = same.n;
+    return same;
+  }
+  const n = Math.max(0, ...tree.versions.map((v) => v.n)) + 1;
+  const dir = join3(project2, LOCK_DIR, "versions", lock);
+  await mkdir2(dir, { recursive: true });
+  const snapshot = join3(dir, `v${n}${extname(file2)}`);
+  await copyFile(file2, snapshot);
+  let kept;
+  if (render) {
+    kept = join3(dir, `v${n}.png`);
+    await copyFile(render, kept);
+  }
+  const version2 = { n, file: file2, snapshot, ...kept ? { render: kept } : {}, at: Date.now(), ...tree.head ? { parent: tree.head } : {} };
+  tree.versions.push(version2);
+  tree.head = n;
+  return version2;
+}
+async function restoreVersion(project2, lock, tree, n) {
+  const version2 = tree.versions.find((v) => v.n === n);
+  if (!version2) throw new Error(`The "${lock}" lock has no v${n}. It has: ${tree.versions.map((v) => `v${v.n}`).join(", ") || "no versions yet"}.`);
+  await keepVersion(project2, lock, tree, version2.file).catch((error62) => {
+    if (error62.code !== "ENOENT") throw error62;
+  });
+  await copyFile(version2.snapshot, version2.file);
+  tree.head = n;
+  return version2;
+}
+
+// src/status.ts
 var RUNNING = "running.json";
 var LAST_RUN = "last-run.json";
 var TASK = "task.json";
 var PIN = "pin.json";
-var path = (project2, name) => join2(project2, LOCK_DIR, name);
+var DESIGNS = "designs.json";
+var path = (project2, name) => join4(project2, LOCK_DIR, name);
 async function readStatus(project2, name) {
   try {
-    return JSON.parse(await readFile(path(project2, name), "utf8"));
+    return JSON.parse(await readFile3(path(project2, name), "utf8"));
   } catch {
     return void 0;
   }
 }
 async function writeStatus(project2, name, value) {
-  await mkdir(join2(project2, LOCK_DIR), { recursive: true });
-  await writeFile(path(project2, name), JSON.stringify(value));
+  await mkdir3(join4(project2, LOCK_DIR), { recursive: true });
+  await writeFile2(path(project2, name), JSON.stringify(value));
 }
 async function clearStatus(project2, name) {
   await rm(path(project2, name), { force: true });
+}
+async function noteDesigns(project2, event) {
+  const designs = await readStatus(project2, DESIGNS) ?? { locks: {} };
+  const abs2 = (file2) => resolve(project2, file2).replaceAll("\\", "/");
+  let said;
+  if (event.tool === "check_options") designs.options = event.files.map(abs2);
+  else if (event.tool === "lock_design") {
+    const picked = abs2(event.file);
+    designs.locks[event.name] = { picked, options: designs.options?.includes(picked) ? designs.options : [picked], versions: [] };
+  } else if (event.lock) {
+    const lock = designs.locks[event.lock] ??= { picked: abs2((await readLock(project2, event.lock)).from), options: [], versions: [] };
+    const render = renderPath(project2, event.file);
+    const version2 = await keepVersion(project2, event.lock, lock, abs2(event.file), await access(render).then(() => render, () => void 0));
+    said = `Kept as v${version2.n} of "${event.lock}"${version2.parent ? `, from v${version2.parent}` : ""}. If the person asks for an earlier version, put it back with restore_version.`;
+  } else return void 0;
+  await writeStatus(project2, DESIGNS, designs);
+  return said;
+}
+async function restoreDesign(project2, lock, n) {
+  const designs = await readStatus(project2, DESIGNS) ?? { locks: {} };
+  const tree = designs.locks[lock];
+  if (!tree) throw new Error(`The "${lock}" lock has no versions yet. A version is kept each time check_design runs with it.`);
+  const version2 = await restoreVersion(project2, lock, tree, n);
+  await writeStatus(project2, DESIGNS, designs);
+  return version2;
 }
 
 // src/brief.ts
@@ -3485,14 +3565,14 @@ function designKind(prompt) {
 }
 async function existingLocks(project2) {
   try {
-    return (await readdir(join3(project2, LOCK_DIR))).filter((f3) => f3.endsWith(".lock.json")).map((f3) => f3.slice(0, -".lock.json".length));
+    return (await readdir(join5(project2, LOCK_DIR))).filter((f3) => f3.endsWith(".lock.json")).map((f3) => f3.slice(0, -".lock.json".length));
   } catch {
     return [];
   }
 }
 async function usesRemotion(project2) {
   try {
-    const pkg = JSON.parse(await readFile2(join3(project2, "package.json"), "utf8"));
+    const pkg = JSON.parse(await readFile4(join5(project2, "package.json"), "utf8"));
     return "remotion" in { ...pkg.dependencies, ...pkg.devDependencies };
   } catch {
     return false;
@@ -3540,11 +3620,11 @@ async function brief(prompt, project2) {
   return [
     `Attentry Design: this is ${kind === "illustration" ? "an" : "a"} ${kind} request. Before drawing:`,
     "1. Brief. Ask the person, in one round with your question tool, only what they didn't say: the one thing it should say (its single message), what it's for, who sees it, where it's used and at what size, the style of the world (hand-drawn, flat vector, isometric, 3D look, pixel art, or another), the exact text, the mood, anything it must have or avoid. If they skip or decline the questions, don't stop: choose sensible answers yourself, state them in one line, and go on to the options, where they choose by looking.",
-    `Then the words, which carry the message: ${kind === "video" ? 'the script, every caption or spoken line in order with how long it stays up (written as "line | 3s")' : "the headline, every label and any other text"}. If the person gave them, use them word for word. If not, draft them from the single message and show them in the chat as a plain list, then wait for a yes or changes before drawing anything; this step isn't skipped, even when the questions were. A picture can't rescue words that don't say it.`,
+    `Then the words, which carry the message: ${kind === "video" ? 'the script, every caption or spoken line in order with how long it stays up (written as "line | 3s")' : "the headline, every label and any other text"}. If the person gave them, use them word for word. If not, draft them from the single message and show them in the chat as a plain list headed "${kind === "video" ? "The script" : "The words"}", then wait for a yes or changes before drawing anything; this step isn't skipped, even when the questions were. A picture can't rescue words that don't say it.`,
     `2. Options. Then ${options}: 2\u20133 for something small, up to ${MAX_OPTIONS} for a key piece. Make them differ in composition (off center, diagonal, a group to one side, not all centered), in value plan (light, dark or mid-grey field) and in palette; and in how they explain the idea (a single scene, a before and after, a step-by-step flow); if the person didn't choose a style, let them differ in style too (hand-drawn, flat vector, isometric, 3D look, pixel art). Call ${tools.check_options}, redo what it flags, then show the person the contact sheet and ask which one, by number.`,
     "While drawing: build it around the single message. Plan the text first: one headline, labels clearly smaller (sizes at least 1.5\xD7 apart), and measure each line's width (characters \xD7 letter width) against the frame so every line stays inside a 5% margin. Lettering drawn as shapes (pixel art, hand-drawn type): wrap each line in <g data-text='the words'> so it can be measured. Draw each idea as the kind of picture it is: a thing as a portrait, an amount as a chart, a place as a map, a sequence as a timeline, a process as a flow with arrows, a reason as a comparison (a process drawn as a single object won't read). Size the main characters by the smallest part that must read (a facial expression, a hand gesture). An explaining picture carries a title and labels its parts. Keep text and shapes clearly away from an edge or clearly overlapping it, never just touching.",
     styleNotes(prompt),
-    `3. Lock. Call ${tools.lock}, a short name, the style and the approved words (one line each), so the check holds the finished design to them.`,
+    `3. Lock. Call ${tools.lock}, a short name, the style, the approved words (one line each), and the mood and purpose from the brief, so the check holds the finished design to them and doesn't suggest against the brief.`,
     `4. Finish. Make it in full, call ${tools.check} and the lock, fix the errors, and mention the suggestions without forcing them.`,
     "5. End with a short design card: what was made, the lock, what was found and fixed, and any part that may not get its message across.",
     "Attentry Design checks quality, not taste: the person's choices win.",
@@ -8691,7 +8771,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve) {
+function isRecursive(inst, stack, resolve2) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -8701,7 +8781,7 @@ function isRecursive(inst, stack, resolve) {
   let result = NONE;
   const check2 = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve);
+      const answer = isRecursive(child, stack, resolve2);
       if (answer > result)
         result = answer;
     }
@@ -8712,7 +8792,7 @@ function isRecursive(inst, stack, resolve) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve2) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -8776,7 +8856,7 @@ function isRecursive(inst, stack, resolve) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve2 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -27721,14 +27801,14 @@ function inputRequiredRoundsExceededMessage(method, maxRounds) {
   return `Multi-round-trip request '${method}' still required input after ${maxRounds} rounds (inputRequired.maxRounds)`;
 }
 function sleep(ms, signal) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     if (signal?.aborted) {
       reject(signal.reason instanceof SdkError ? signal.reason : new SdkError(SdkErrorCode.RequestTimeout, String(signal.reason)));
       return;
     }
     const timer = setTimeout(() => {
       signal?.removeEventListener("abort", onAbort);
-      resolve();
+      resolve2();
     }, ms);
     const onAbort = () => {
       clearTimeout(timer);
@@ -28527,7 +28607,7 @@ var Protocol = class {
     const flowStartedAt = Date.now();
     let onAbort;
     let cleanupMessageId;
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       const earlyReject = (error62) => {
         reject(error62);
       };
@@ -28596,7 +28676,7 @@ var Protocol = class {
         }
         if (decoded.kind === "invalid") return reject(decoded.error);
         if (decoded.kind === "input_required") {
-          if (options?.allowInputRequired === true) return resolve(manualInputRequiredValue(decoded));
+          if (options?.allowInputRequired === true) return resolve2(manualInputRequiredValue(decoded));
           const flow = {
             codec: codec2,
             request,
@@ -28608,11 +28688,11 @@ var Protocol = class {
               params
             }, resultSchema, legOptions)
           };
-          return resolve(this._resolveNonCompleteResult(decoded, flow));
+          return resolve2(this._resolveNonCompleteResult(decoded, flow));
         }
         const result = decoded.result;
         validateStandardSchema(resultSchema, result).then((parseResult) => {
-          if (parseResult.success) resolve(parseResult.data);
+          if (parseResult.success) resolve2(parseResult.data);
           else reject(new SdkError(SdkErrorCode.InvalidResult, `Invalid result for ${request.method}: ${parseResult.error}`));
         }, reject);
       });
@@ -31528,7 +31608,7 @@ var require_compile = /* @__PURE__ */ __commonJSMin(((exports) => {
     ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, ref);
     const schOrFunc = root2.refs[ref];
     if (schOrFunc) return schOrFunc;
-    let _sch = resolve.call(this, root2, ref);
+    let _sch = resolve2.call(this, root2, ref);
     if (_sch === void 0) {
       const schema = (_a3 = root2.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
       const { schemaId } = this.opts;
@@ -31554,7 +31634,7 @@ var require_compile = /* @__PURE__ */ __commonJSMin(((exports) => {
   function sameSchemaEnv(s1, s2) {
     return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
   }
-  function resolve(root2, ref) {
+  function resolve2(root2, ref) {
     let sch;
     while (typeof (sch = this.refs[ref]) == "string") ref = sch;
     return sch || this.schemas[ref] || resolveSchema.call(this, root2, ref);
@@ -32249,7 +32329,7 @@ var require_fast_uri = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     else if (typeof uri === "object") uri = parse4(serialize(uri, options), options);
     return uri;
   }
-  function resolve(baseURI, relativeURI, options) {
+  function resolve2(baseURI, relativeURI, options) {
     const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
     const { parsed: baseParsed, malformedAuthorityOrPort: baseMalformed, malformedPercentEncoding: baseMalformedPercentEncoding, malformedSchemeSpecific: baseMalformedSchemeSpecific, malformedHost: baseMalformedHost, malformedScheme: baseMalformedScheme } = parseWithStatus(baseURI, schemelessOptions);
     const { parsed: relativeParsed, malformedAuthorityOrPort: relativeMalformed, malformedPercentEncoding: relativeMalformedPercentEncoding, malformedSchemeSpecific: relativeMalformedSchemeSpecific, malformedHost: relativeMalformedHost, malformedScheme: relativeMalformedScheme } = parseWithStatus(relativeURI, schemelessOptions);
@@ -32264,41 +32344,41 @@ var require_fast_uri = /* @__PURE__ */ __commonJSMin(((exports, module) => {
     schemelessOptions.skipEscape = true;
     return serialize(resolved, schemelessOptions);
   }
-  function resolveComponent(base, relative, options, skipNormalization) {
+  function resolveComponent(base, relative2, options, skipNormalization) {
     const target = {};
     if (!skipNormalization) {
       base = parse4(serialize(base, options), options);
-      relative = parse4(serialize(relative, options), options);
+      relative2 = parse4(serialize(relative2, options), options);
     }
     options = options || {};
-    if (!options.tolerant && relative.scheme) {
-      target.scheme = relative.scheme;
-      target.userinfo = relative.userinfo;
-      target.host = relative.host;
-      target.port = relative.port;
-      target.path = removeDotSegments(relative.path || "");
-      target.query = relative.query;
+    if (!options.tolerant && relative2.scheme) {
+      target.scheme = relative2.scheme;
+      target.userinfo = relative2.userinfo;
+      target.host = relative2.host;
+      target.port = relative2.port;
+      target.path = removeDotSegments(relative2.path || "");
+      target.query = relative2.query;
     } else {
-      if (relative.userinfo !== void 0 || relative.host !== void 0 || relative.port !== void 0) {
-        target.userinfo = relative.userinfo;
-        target.host = relative.host;
-        target.port = relative.port;
-        target.path = removeDotSegments(relative.path || "");
-        target.query = relative.query;
+      if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
+        target.userinfo = relative2.userinfo;
+        target.host = relative2.host;
+        target.port = relative2.port;
+        target.path = removeDotSegments(relative2.path || "");
+        target.query = relative2.query;
       } else {
-        if (!relative.path) {
+        if (!relative2.path) {
           target.path = base.path;
-          if (relative.query !== void 0) target.query = relative.query;
+          if (relative2.query !== void 0) target.query = relative2.query;
           else target.query = base.query;
         } else {
-          if (relative.path[0] === "/") target.path = removeDotSegments(relative.path);
+          if (relative2.path[0] === "/") target.path = removeDotSegments(relative2.path);
           else {
-            if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) target.path = "/" + relative.path;
-            else if (!base.path) target.path = relative.path;
-            else target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative.path;
+            if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) target.path = "/" + relative2.path;
+            else if (!base.path) target.path = relative2.path;
+            else target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
             target.path = removeDotSegments(target.path);
           }
-          target.query = relative.query;
+          target.query = relative2.query;
         }
         target.userinfo = base.userinfo;
         target.host = base.host;
@@ -32306,7 +32386,7 @@ var require_fast_uri = /* @__PURE__ */ __commonJSMin(((exports, module) => {
       }
       target.scheme = base.scheme;
     }
-    target.fragment = relative.fragment;
+    target.fragment = relative2.fragment;
     return target;
   }
   function equal(uriA, uriB, options) {
@@ -32531,7 +32611,7 @@ var require_fast_uri = /* @__PURE__ */ __commonJSMin(((exports, module) => {
   const fastUri = {
     SCHEMES,
     normalize,
-    resolve,
+    resolve: resolve2,
     resolveComponent,
     equal,
     serialize,
@@ -36402,15 +36482,15 @@ var PerRequestHTTPServerTransport = class {
     };
     if (isJSONRPCRequest(message)) {
       this._requestId = message.id;
-      let resolve;
+      let resolve2;
       let reject;
       const promise2 = new Promise((promiseResolve, promiseReject) => {
-        resolve = promiseResolve;
+        resolve2 = promiseResolve;
         reject = promiseReject;
       });
       this._deferredResponse = {
         promise: promise2,
-        resolve,
+        resolve: resolve2,
         reject,
         settled: false
       };
@@ -38249,7 +38329,7 @@ var StdioServerTransport = class {
   }
   send(message) {
     if (this._closed) return Promise.reject(/* @__PURE__ */ new Error("StdioServerTransport is closed"));
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       const json2 = serializeMessage(message);
       let settled = false;
       const onError = (error62) => {
@@ -38264,14 +38344,14 @@ var StdioServerTransport = class {
         settled = true;
         this._stdout.off("error", onError);
         this._stdout.off("drain", onDrain);
-        resolve();
+        resolve2();
       };
       this._stdout.once("error", onError);
       if (this._stdout.write(json2)) {
         if (settled) return;
         settled = true;
         this._stdout.off("error", onError);
-        resolve();
+        resolve2();
       } else if (!settled) this._stdout.once("drain", onDrain);
     });
   }
@@ -38325,14 +38405,14 @@ var StdioConnectionChannel = class {
   */
   async whenRequestsAnswered(timeoutMs) {
     if (this._closed || this._pendingRequests.size === 0) return true;
-    return await new Promise((resolve) => {
+    return await new Promise((resolve2) => {
       const waiter = () => {
         clearTimeout(timer);
-        resolve(true);
+        resolve2(true);
       };
       const timer = setTimeout(() => {
         this._drainWaiters = this._drainWaiters.filter((pending) => pending !== waiter);
-        resolve(false);
+        resolve2(false);
       }, timeoutMs);
       this._drainWaiters.push(waiter);
     });
@@ -38676,7 +38756,7 @@ function toError(value) {
 // package.json
 var package_default = {
   name: "attentry-design",
-  version: "0.1.0",
+  version: "0.1.2",
   private: true,
   license: "MIT",
   type: "module",
@@ -38719,7 +38799,9 @@ var INSTRUCTIONS = `Attentry Design checks the illustrations and videos you make
 - Before any options: get the words approved (the video's script, the picture's exact text). If the person gave none, draft them and show them for a yes before drawing.
 - Before the full drawing: draw 2\u2013${MAX_OPTIONS} small options as files and call check_options. Redo what it flags, then let the person pick by number.
 - When the person picks: call lock_design with that file and the approved words.
-- When the design is finished: call check_design (with the lock). Fix the errors; mention the suggestions.
+- To look at a design while drawing, call preview_design (or preview_video); it only renders.
+- When the design is finished: call check_design (with the lock). Open the render it names and look at it. Fix the errors; mention the suggestions.
+- Each check with a lock keeps a numbered version (v1, v2\u2026). When the person wants an earlier one back, call restore_version, then edit from there.
 - Remotion videos: the same stages with check_video_options (one composition per option), lock_video and check_video.`;
 var FILE = external_exports.string().min(1).max(1e3);
 var SIZE = external_exports.string().regex(/^\d+x\d+$/, "Give size as WxH, like 1200x630.").optional().describe("For HTML files: the page size as WxH, like 1200x630. SVGs use their own size.");
@@ -38727,6 +38809,8 @@ var ENTRY = external_exports.string().min(1).max(1e3).describe('The Remotion ent
 var COMPOSITION = external_exports.string().min(1).max(200).describe("A composition id, as in <Composition id=\u2026>.");
 var STYLE = external_exports.string().max(60).optional().describe('The world style the person chose: "stick figure", "flat 2D", "3D", "pixel art", or their own words. A pixel-art lock is checked for pixel-sharp edges.');
 var WORDS = external_exports.array(external_exports.string().min(1).max(500)).max(60).optional().describe("The words the person approved, one line each: the video's script (every caption, in order, with its time as 'line | 3s') or the picture's exact text (headline, labels). The check holds the finished design to them: every line there, in order, for its time.");
+var MOOD = external_exports.string().max(80).optional().describe('The mood from the brief, like "dark and tense" or "warm". A dark mood keeps the check from suggesting it be lighter.');
+var PURPOSE = external_exports.string().max(120).optional().describe('What it is for, from the brief, like "promo for a bakery" or "tribute to a game". A tribute or homage keeps the check from asking for a call to action.');
 var NAME = external_exports.string().regex(/^[\w-]{1,60}$/, "Letters, digits, - and _ only.").describe('A short name for the lock, like "invitation".');
 var TOOLS = {
   check_options: {
@@ -38740,12 +38824,27 @@ var TOOLS = {
   lock_design: {
     title: "Lock the chosen design",
     description: "Call when the person picks an option. Saves its style, the approved words, colors, fonts, size, composition and value plan as a design lock, which check_design holds the finished work to.",
-    inputSchema: external_exports.object({ file: FILE.describe("The chosen option's file."), name: NAME, style: STYLE, words: WORDS, size: SIZE })
+    inputSchema: external_exports.object({ file: FILE.describe("The chosen option's file."), name: NAME, style: STYLE, words: WORDS, mood: MOOD, purpose: PURPOSE, size: SIZE })
   },
   check_design: {
     title: "Check the finished design",
     description: "Call on a finished design: SVG, HTML, or a generated image (PNG, JPG, WebP). Errors to fix: text contrast below WCAG, text cut off or at the edge (including lettering drawn as shapes, marked with data-text, or found in the pixels by OCR), colors or fonts outside the lock, smoothed edges in pixel art. Suggestions: no clear headline, shapes cut by the frame, and the AI defaults (dead-center subject, everything mid-grey, too saturated, raw red, yellow and blue together). Each with its source.",
     inputSchema: external_exports.object({ file: FILE, lock: NAME.optional().describe("The lock to hold it to."), size: SIZE })
+  },
+  preview_design: {
+    title: "Render a design to look at",
+    description: "Call to see a design (SVG, HTML, or an image) as it renders, without checking it: while drawing, or before showing it to the person. Saves a PNG and says where; open it and look. Use check_options only for real options and check_design for the finished design.",
+    inputSchema: external_exports.object({ file: FILE, size: SIZE })
+  },
+  preview_video: {
+    title: "Render video frames to look at",
+    description: "Call to see a Remotion composition without checking it: the frame at one moment (seconds: [2.5]), several moments side by side, or its five key frames when no seconds are given. Saves a PNG and says where; open it and look.",
+    inputSchema: external_exports.object({ entry: ENTRY, composition: COMPOSITION, seconds: external_exports.array(external_exports.number().min(0)).max(8).optional().describe("Moments to show, in seconds. Left out: the five key frames.") })
+  },
+  restore_version: {
+    title: "Put back an earlier version",
+    description: "Call when the person wants an earlier version of a locked design back (go back to v2, the first one was better). Puts that version back in the file it came from; whatever is in the file now is kept as a version first, so nothing is lost. Edit from there: the next check_design keeps the result as a branch from that version.",
+    inputSchema: external_exports.object({ lock: NAME.describe("The lock the versions belong to."), version: external_exports.number().int().min(1).describe("The version number: 2 for v2.") })
   },
   check_video_options: {
     title: "Check the video options",
@@ -38755,7 +38854,7 @@ var TOOLS = {
   lock_video: {
     title: "Lock the chosen video",
     description: "Call when the person picks a video option. Saves its style, the approved script, colors, fonts, size and look as a design lock, which check_video holds the finished video to.",
-    inputSchema: external_exports.object({ entry: ENTRY, composition: COMPOSITION, name: NAME, style: STYLE, words: WORDS })
+    inputSchema: external_exports.object({ entry: ENTRY, composition: COMPOSITION, name: NAME, style: STYLE, words: WORDS, mood: MOOD, purpose: PURPOSE })
   },
   check_video: {
     title: "Check the finished video",
@@ -38769,10 +38868,13 @@ function runMcpServer(project2, load) {
     loading = void 0;
     throw error62;
   });
-  const call = async (tool, lock, run) => {
+  const call = async (tool, lock, run, design) => {
     try {
       await writeStatus(project2, RUNNING, { tool, started: Date.now(), ...lock ? { lock } : {} });
-      return { content: [{ type: "text", text: (await run(await core())).text }] };
+      const result = await run(await core());
+      const note = design ? await noteDesigns(project2, design) : void 0;
+      return { content: [{ type: "text", text: note ? `${result.text}
+${note}` : result.text }] };
     } catch (error62) {
       return { content: [{ type: "text", text: `Attentry Design failed: ${error62.message}` }], isError: true };
     } finally {
@@ -38783,11 +38885,21 @@ function runMcpServer(project2, load) {
   const annotations = { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
   serveStdio(() => {
     const server = new McpServer({ name: "attentry-design", version: package_default.version ?? "0.0.0" }, { instructions: INSTRUCTIONS });
-    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call("check_options", void 0, (c2) => c2.runOptions(project2, a.files, parseSize(a.size))));
-    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call("lock_design", a.name, (c2) => c2.runLock(project2, a.file, a.name, parseSize(a.size), a.style, a.words)));
-    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call("check_design", a.lock, (c2) => c2.runCheck(project2, a.file, a.lock, parseSize(a.size))));
+    server.registerTool("check_options", { ...TOOLS.check_options, annotations }, (a) => call("check_options", void 0, (c2) => c2.runOptions(project2, a.files, parseSize(a.size)), { tool: "check_options", files: a.files }));
+    server.registerTool("lock_design", { ...TOOLS.lock_design, annotations }, (a) => call("lock_design", a.name, (c2) => c2.runLock(project2, a.file, a.name, parseSize(a.size), a.style, a.words, { mood: a.mood, purpose: a.purpose }), { tool: "lock_design", file: a.file, name: a.name }));
+    server.registerTool("check_design", { ...TOOLS.check_design, annotations }, (a) => call("check_design", a.lock, (c2) => c2.runCheck(project2, a.file, a.lock, parseSize(a.size)), { tool: "check_design", file: a.file, lock: a.lock }));
+    server.registerTool("preview_design", { ...TOOLS.preview_design, annotations }, (a) => call("preview_design", void 0, (c2) => c2.runPreview(project2, a.file, parseSize(a.size))));
+    server.registerTool("preview_video", { ...TOOLS.preview_video, annotations }, (a) => call("preview_video", void 0, (c2) => c2.runVideoPreview(project2, a.entry, a.composition, a.seconds)));
+    server.registerTool("restore_version", { ...TOOLS.restore_version, annotations }, async (a) => {
+      try {
+        const v = await restoreDesign(project2, a.lock, a.version);
+        return { content: [{ type: "text", text: `Put v${v.n} of "${a.lock}" back in ${v.file}. Edit from here; the next check_design keeps it as a branch from v${v.n}.` }] };
+      } catch (error62) {
+        return { content: [{ type: "text", text: `Attentry Design failed: ${error62.message}` }], isError: true };
+      }
+    });
     server.registerTool("check_video_options", { ...TOOLS.check_video_options, annotations }, (a) => call("check_video_options", void 0, (c2) => c2.runVideoOptions(project2, a.entry, a.compositions)));
-    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call("lock_video", a.name, (c2) => c2.runVideoLock(project2, a.entry, a.composition, a.name, a.style, a.words)));
+    server.registerTool("lock_video", { ...TOOLS.lock_video, annotations }, (a) => call("lock_video", a.name, (c2) => c2.runVideoLock(project2, a.entry, a.composition, a.name, a.style, a.words, { mood: a.mood, purpose: a.purpose })));
     server.registerTool("check_video", { ...TOOLS.check_video, annotations }, (a) => call("check_video", a.lock, (c2) => c2.runVideoCheck(project2, a.entry, a.composition, a.lock)));
     return server;
   }, { onerror: (error62) => process.stderr.write(`attentry-design mcp: ${error62.message.replace(/\s+/g, " ").slice(0, 300)}
@@ -38801,15 +38913,15 @@ function runMcpServer(project2, load) {
 
 // src/plugin.ts
 var dist = dirname(fileURLToPath(import.meta.url));
-var root = join4(dist, "..");
+var root = join6(dist, "..");
 var project = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 var STALE = 10 * 6e4;
-var dataDir = () => process.env.CLAUDE_PLUGIN_DATA || join4(homedir(), ".attentry-design", "runtime");
-var lockfile = (dir) => existsSync2(join4(dir, "package-lock.json")) ? readFileSync(join4(dir, "package-lock.json"), "utf8") : "";
+var dataDir = () => process.env.CLAUDE_PLUGIN_DATA || join6(homedir(), ".attentry-design", "runtime");
+var lockfile = (dir) => existsSync2(join6(dir, "package-lock.json")) ? readFileSync(join6(dir, "package-lock.json"), "utf8") : "";
 var current = (dir) => hasRuntime(dir) && lockfile(dir) === lockfile(root);
 async function install(dir) {
-  await mkdir2(dir, { recursive: true });
-  const lock = join4(dir, INSTALLING);
+  await mkdir4(dir, { recursive: true });
+  const lock = join6(dir, INSTALLING);
   for (; ; ) {
     try {
       await (await open2(lock, "wx")).close();
@@ -38824,17 +38936,17 @@ async function install(dir) {
   }
   try {
     if (current(dir)) return;
-    for (const f3 of ["package.json", "package-lock.json"]) await copyFile(join4(root, f3), join4(dir, f3));
-    const log = createWriteStream(join4(dir, "install.log"));
-    const code = await new Promise((resolve, reject) => {
+    for (const f3 of ["package.json", "package-lock.json"]) await copyFile2(join6(root, f3), join6(dir, f3));
+    const log = createWriteStream(join6(dir, "install.log"));
+    const code = await new Promise((resolve2, reject) => {
       const npm = spawn("npm ci --omit=dev --ignore-scripts --no-audit --no-fund", { cwd: dir, shell: true });
       npm.stdout.pipe(log);
       npm.stderr.pipe(log);
       npm.on("error", reject);
-      npm.on("close", (c2) => resolve(c2 ?? 1));
+      npm.on("close", (c2) => resolve2(c2 ?? 1));
     }).catch(() => -1);
     if (code !== 0 || !hasRuntime(dir)) {
-      throw new Error(`Couldn't install Attentry Design's libraries (sharp, Playwright, tesseract.js) with npm into ${dir}. Is npm on the PATH? See ${join4(dir, "install.log")}.`);
+      throw new Error(`Couldn't install Attentry Design's libraries (sharp, Playwright, tesseract.js) with npm into ${dir}. Is npm on the PATH? See ${join6(dir, "install.log")}.`);
     }
   } finally {
     await unlink(lock).catch(() => {
@@ -38842,12 +38954,12 @@ async function install(dir) {
   }
 }
 async function loadCore() {
-  if (hasRuntime(root)) return import(pathToFileURL(join4(dist, "core.mjs")).href);
+  if (hasRuntime(root)) return import(pathToFileURL(join6(dist, "core.mjs")).href);
   const dir = dataDir();
   if (!current(dir)) await install(dir);
-  const here = join4(dir, "core.mjs");
-  const built = await readFile3(join4(dist, "core.mjs"));
-  if (!existsSync2(here) || !built.equals(await readFile3(here))) await copyFile(join4(dist, "core.mjs"), here);
+  const here = join6(dir, "core.mjs");
+  const built = await readFile5(join6(dist, "core.mjs"));
+  if (!existsSync2(here) || !built.equals(await readFile5(here))) await copyFile2(join6(dist, "core.mjs"), here);
   return import(pathToFileURL(here).href);
 }
 async function setup(background) {

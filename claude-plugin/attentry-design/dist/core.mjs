@@ -58,7 +58,29 @@ var READ_DESIGN = `(() => {
   // Only elements that paint: the root <svg> and <g> report a default black fill they never draw.
   const PAINTS = new Set(["rect", "circle", "ellipse", "line", "polyline", "polygon", "path", "text", "tspan", "textpath", "use"]);
   const colors = new Set(), fonts = new Set(), texts = [], cut = [], panels = [], rings = [], images = [];
-  const panel = (r) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height }); };
+  const panel = (r, what) => { if (r.width * r.height > 0.004 * vw * vh && r.width * r.height < 0.9 * vw * vh && panels.length < 400) panels.push({ x: r.x, y: r.y, width: r.width, height: r.height, what }); };
+  // Whether a color is set (attribute or style) on the element or a parent, up to stop.
+  const setOn = (el, k, stop) => {
+    for (let e = el; e && e !== stop; e = e.parentElement) if (e.hasAttribute(k) || (e.style && e.style.getPropertyValue(k) !== "")) return true;
+    return false;
+  };
+  const hasInside = (el) => {
+    const tag = el.tagName.toLowerCase();
+    if (tag !== "path" && tag !== "polyline") return true;
+    try {
+      const b = el.getBBox();
+      const point = el.ownerSVGElement.createSVGPoint();
+      for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) {
+        point.x = b.x + (b.width * i) / 8;
+        point.y = b.y + (b.height * j) / 8;
+        if (el.isPointInFill(point)) return true;
+      }
+      return false;
+    } catch {
+      return true; // no geometry to ask about: count its fill, as before
+    }
+  };
+  const describe = (tag, style) => [tag, visible(style.fill) && !style.fill.startsWith("url(") ? "filled " + style.fill : visible(style.fill) ? "filled with a gradient" : "", visible(style.stroke) && parseFloat(style.strokeWidth) > 0 ? "outlined " + style.stroke : ""].filter(Boolean).join(" ");
   const vw = innerWidth, vh = innerHeight;
   const visible = (c) => c && c !== "none" && c !== "transparent" && !/rgba\\(.*,\\s*0\\)$/.test(c);
   const opacityOf = (el) => { let o = 1; for (let e = el; e; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
@@ -110,15 +132,22 @@ var READ_DESIGN = `(() => {
       continue;
     }
     if (svg && PAINTS.has(el.tagName.toLowerCase())) {
-      // A <line> has no inside, so its fill (black by default) is never painted.
-      const paints = el.tagName.toLowerCase() === "line" ? [style.stroke] : [style.fill, style.stroke];
+      // A <line> has no inside, so its fill (black by default) is never painted; nor has a path or
+      // polyline that is only strokes (a straight dash), which the browser says covers no point.
+      // Colors that are set somewhere count; the default black that nothing set doesn't. A shape in
+      // <defs> takes unset colors from where it's used, so there only its own count; a <use> paints
+      // nothing itself but passes down the colors set on it or around it.
+      const tag0 = el.tagName.toLowerCase();
+      const defs = el.closest("defs, symbol");
+      const kinds = tag0 === "line" || !hasInside(el) ? ["stroke"] : ["fill", "stroke"];
+      const paints = kinds.filter((k) => (tag0 === "use" || defs ? setOn(el, k, defs ? defs.parentElement : null) : true)).map((k) => style[k]);
       for (const c of paints) if (visible(c) && !c.startsWith("url(")) colors.add(c);
       const r = el.getBoundingClientRect();
       const tag = el.tagName.toLowerCase();
       // Text is what sits in a panel, never the panel: a <text> would "hold" its own colored <tspan>.
-      if (tag !== "text" && tag !== "tspan" && tag !== "textpath") panel(r);
+      if (tag !== "text" && tag !== "tspan" && tag !== "textpath") panel(r, describe(tag, style));
       if ((tag === "circle" || tag === "ellipse") && visible(style.stroke) && parseFloat(style.strokeWidth) > 0 && r.width > 4 && rings.length < 100) {
-        rings.push({ x: r.x, y: r.y, width: r.width, height: r.height });
+        rings.push({ x: r.x, y: r.y, width: r.width, height: r.height, what: describe(tag, style) });
       }
       const small = r.width * r.height < 0.02 * vw * vh;
       if (small && r.width > 0 && (r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1) && cut.length < 200) {
@@ -160,7 +189,7 @@ var READ_DESIGN = `(() => {
         const s = getComputedStyle(e);
         if (visible(s.backgroundColor) || (parseFloat(s.borderTopWidth) > 0 && visible(s.borderTopColor))) {
           const b = shown(e, e.getBoundingClientRect());
-          if (b && b.width * b.height < 0.9 * vw * vh) holder = b;
+          if (b && b.width * b.height < 0.9 * vw * vh) holder = { ...b, what: e.tagName.toLowerCase() + (visible(s.backgroundColor) ? " with background " + s.backgroundColor : " with a border " + s.borderTopColor) };
           break;
         }
       }
@@ -177,28 +206,51 @@ var READ_DESIGN = `(() => {
 
 // src/remotion.ts
 import { createRequire } from "node:module";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readdir, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 var TIMEOUT = 3e4;
 var served = /* @__PURE__ */ new Map();
-function serveProject(project, entry) {
+async function lastChange(entryPoint) {
+  const newest = async (folder) => {
+    const entries = await readdir(folder, { withFileTypes: true });
+    const times = await Promise.all(entries.map(async (e4) => {
+      if (e4.name === "node_modules" || e4.name === ".git") return 0;
+      const path = join(folder, e4.name);
+      return e4.isDirectory() ? newest(path) : (await stat(path)).mtimeMs;
+    }));
+    return Math.max(0, ...times);
+  };
+  return newest(dirname(entryPoint));
+}
+async function serveProject(project, entry) {
   const entryPoint = resolve(project, entry);
+  const changed = await lastChange(entryPoint);
+  const kept = served.get(entryPoint);
+  if (kept && kept.changed < changed) {
+    served.delete(entryPoint);
+    void kept.server.then((s) => s.close(), () => void 0);
+  }
   if (!served.has(entryPoint)) {
-    served.set(entryPoint, (async () => {
-      const require2 = createRequire(join(project, "package.json"));
-      let bundler, renderer;
-      try {
-        bundler = require2("@remotion/bundler");
-        renderer = require2("@remotion/renderer");
-      } catch {
-        throw new Error("This project has no @remotion/bundler and @remotion/renderer. Install Remotion in it (npm i @remotion/cli).");
-      }
+    const server = (async () => {
+      const found = [entryPoint, join(project, "package.json")].map((from) => {
+        try {
+          const require2 = createRequire(from);
+          return { require: require2, bundlerPath: require2.resolve("@remotion/bundler") };
+        } catch {
+          return void 0;
+        }
+      }).find(Boolean);
+      if (!found) throw new Error("This project has no @remotion/bundler and @remotion/renderer. Install Remotion in it (npm i @remotion/cli).");
+      const bundler = found.require("@remotion/bundler");
+      const renderer = found.require("@remotion/renderer");
+      const at = found.bundlerPath.lastIndexOf(`${sep}node_modules${sep}`);
+      const remotionRoot = at >= 0 ? found.bundlerPath.slice(0, at) : project;
       const folder = await bundler.bundle({ entryPoint, outDir: await mkdtemp(join(tmpdir(), "attentry-design-bundle-")) });
-      const server = await renderer.RenderInternals.prepareServer({
+      const server2 = await renderer.RenderInternals.prepareServer({
         webpackConfigOrServeUrl: folder,
         port: null,
-        remotionRoot: project,
+        remotionRoot,
         offthreadVideoThreads: 2,
         logLevel: "error",
         indent: false,
@@ -207,15 +259,17 @@ function serveProject(project, entry) {
         forceIPv4: false,
         sampleRate: 48e3
       });
-      return { url: server.serveUrl, proxyPort: server.offthreadPort, close: () => server.closeServer(true) };
-    })());
+      return { url: server2.serveUrl, proxyPort: server2.offthreadPort, close: () => server2.closeServer(true) };
+    })();
+    server.catch(() => served.delete(entryPoint));
+    served.set(entryPoint, { changed, server });
   }
-  return served.get(entryPoint);
+  return served.get(entryPoint).server;
 }
 async function closeRemotion() {
   const all = [...served.values()];
   served.clear();
-  await Promise.all(all.map(async (s) => (await s.catch(() => void 0))?.close()));
+  await Promise.all(all.map(async (s) => (await s.server.catch(() => void 0))?.close()));
 }
 var RemotionProject = class _RemotionProject {
   constructor(server, page) {
@@ -3986,8 +4040,8 @@ async function inkColor(png, box) {
 }
 
 // src/stages.ts
-import { mkdir as mkdir2 } from "node:fs/promises";
-import { isAbsolute, join as join4, relative as relative2, resolve as resolve2 } from "node:path";
+import { mkdir as mkdir2, writeFile as writeFile2 } from "node:fs/promises";
+import { dirname as dirname2, isAbsolute, join as join5, relative as relative2, resolve as resolve2 } from "node:path";
 
 // src/options.ts
 import sharp4 from "sharp";
@@ -3995,6 +4049,8 @@ import { basename } from "node:path";
 
 // src/limits.ts
 var MAX_OPTIONS = 5;
+var DARK_MOOD = /\b(dark|night|noir|moody|gloomy|horror|space|shadowy|mysterious)\b/i;
+var NO_ASK = /\b(tribute|homage|memorial|thank(s| you)|fan (film|video|art)|music video|story|art piece)\b/i;
 var STYLE_3D = /\b(3d|three[- ]d)\b/i;
 
 // src/options.ts
@@ -4092,11 +4148,13 @@ function toHex(color) {
   const c2 = parse_default(color);
   return c2 ? formatHex(c2) : void 0;
 }
-async function writeLock(project, name, rendered, m, style, words) {
+async function writeLock(project, name, rendered, m, style, words, about = {}) {
   const lock = {
     name,
     ...style ? { style } : {},
     ...words?.length ? { words } : {},
+    ...about.mood ? { mood: about.mood } : {},
+    ...about.purpose ? { purpose: about.purpose } : {},
     from: relative(project, rendered.file).replaceAll("\\", "/"),
     size: { width: rendered.width, height: rendered.height },
     colors: [...new Set(rendered.colors.map(toHex).filter((h) => !!h))],
@@ -4169,7 +4227,7 @@ async function check(rendered, m, lock) {
       source: "Bang, Picture This, principle 5; Payne p. 38; Loomis p. 46"
     });
   }
-  if (m.murky) {
+  if (m.murky && !DARK_MOOD.test(lock?.mood ?? "")) {
     findings.push({
       rule: "murk",
       kind: "default",
@@ -4427,14 +4485,14 @@ async function mixels(p4, lock) {
 function tension(r2, texts) {
   const tight = [];
   for (const t of texts.filter((t2) => t2.source !== "ocr")) {
-    const crossed = r2.rings.some((g) => {
+    const crossed = r2.rings.find((g) => {
       const cx2 = g.x + g.width / 2, cy2 = g.y + g.height / 2, rx = g.width / 2, ry = g.height / 2;
       const pts = [0, 0.5, 1].flatMap((u) => [0, 0.5, 1].map((v) => [t.box.x + u * t.box.width, t.box.y + v * t.box.height]));
       const d = pts.map(([x, y]) => ((x - cx2) / rx) ** 2 + ((y - cy2) / ry) ** 2);
       return Math.min(...d) < 1 && Math.max(...d) > 1;
     });
     if (crossed) {
-      tight.push(what(t));
+      tight.push(`${what(t)}: the curve of the ${shape(crossed)} runs through it`);
       continue;
     }
     const cx = t.box.x + t.box.width / 2, cy = t.box.y + t.box.height / 2;
@@ -4442,15 +4500,20 @@ function tension(r2, texts) {
     if (!holder) continue;
     const near = Math.max(2, 0.2 * t.box.height);
     const gaps = [t.box.x - holder.x, holder.x + holder.width - (t.box.x + t.box.width), t.box.y - holder.y, holder.y + holder.height - (t.box.y + t.box.height)];
-    if (gaps.some((g) => Math.abs(g) < near)) tight.push(what(t));
+    const side = gaps.map((g, i) => ({ g, i })).filter(({ g }) => Math.abs(g) < near).sort((a, b) => Math.abs(a.g) - Math.abs(b.g))[0];
+    if (side) tight.push(`${what(t)}: ${Math.round(Math.abs(side.g))} px from the ${["left", "right", "top", "bottom"][side.i]} edge of the ${shape(holder)}`);
   }
   if (!tight.length) return [];
   return [{
     rule: "visual-tension",
     kind: "default",
-    message: `${tight.join(", ")} ${tight.length === 1 ? "almost touches" : "almost touch"} the edge of the shape around ${tight.length === 1 ? "it" : "them"}. Give clear room inside, or let it clearly overlap the edge.`,
+    message: `Almost touching the edge of a shape: ${tight.join("; ")}. Give clear room inside, or let it clearly overlap the edge.`,
     source: "Glitschka, Vector Basic Training pp. 189\u2013191 (visual tension)"
   }];
+}
+function shape(b) {
+  const named2 = (b.what ?? "shape").replace(/rgba?\([^)]*\)/g, (c2) => toHex(c2) ?? c2);
+  return `${named2} (${Math.round(b.width)}\xD7${Math.round(b.height)} at ${Math.round(b.x)}, ${Math.round(b.y)})`;
 }
 var SAME_SIZE = 1.05;
 var CLOSE_SIZE = 1.2;
@@ -4517,6 +4580,7 @@ function format(findings) {
 import sharp6 from "sharp";
 var STEP = 0.25;
 var SEEN = 0.95;
+var LEGIBLE = 0.5;
 var MIN_SIZE = 0.022;
 var CAPTION_SIZE = 0.037;
 var VIDEO_MARGIN = 0.05;
@@ -4529,19 +4593,10 @@ var ONGOING = 2;
 async function checkVideo(c2, frames, lock) {
   const findings = [];
   const picture = (f3) => ({ png: f3.png, width: c2.width, height: c2.height });
-  const texts = /* @__PURE__ */ new Map();
-  frames.forEach((f3, i) => {
-    const visible = f3.texts.filter((t) => t.opacity >= SEEN);
-    const crowded = visible.length > CROWDED;
-    for (const t of visible) {
-      if (crowded && t.size / c2.height < CAPTION_SIZE) continue;
-      if ((t.text.match(/[\p{L}\p{N}]/gu) ?? []).length < 2) continue;
-      if (inBetween(t, frames[i + 1])) continue;
-      texts.set(t.text, [...texts.get(t.text) ?? [], { frame: f3, box: t }]);
-    }
-  });
+  const texts = readable(frames, SEEN, c2);
+  const timed = readable(frames, LEGIBLE, c2);
   const index = new Map(frames.map((f3, i) => [f3, i]));
-  const runs2 = [...texts].map(([text, seen]) => ({ text, seen, run: longestStillRun(seen, frames) })).filter((r2) => r2.run.length > 0).map((r2) => ({ ...r2, start: index.get(r2.run[0].frame), end: index.get(r2.run.at(-1).frame) })).sort((a, b) => a.start - b.start);
+  const runs2 = [...timed].map(([text, seen]) => ({ text, seen, run: longestStillRun(seen, frames) })).filter((r2) => r2.run.length > 0).map((r2) => ({ ...r2, start: index.get(r2.run[0].frame), end: index.get(r2.run.at(-1).frame) })).sort((a, b) => a.start - b.start);
   const near = (a, b) => {
     const gap = Math.max(a.box.y, b.box.y) - Math.min(a.box.y + a.box.height, b.box.y + b.box.height);
     return gap < 2 * Math.max(a.box.height, b.box.height);
@@ -4555,8 +4610,9 @@ async function checkVideo(c2, frames, lock) {
   for (const g of groups) {
     const chars = g.reduce((n, r2) => n + r2.text.length, 0);
     const needed = Math.max(5 / 6, chars / 17);
-    const shown2 = (Math.min(...g.map((r2) => r2.end)) - g[0].start + 1) * STEP;
-    if (shown2 >= needed) continue;
+    const leaving = g.reduce((a, b) => b.end < a.end ? b : a);
+    const shown2 = legibleEdge(frames, leaving.text, leaving.end, 1) - legibleEdge(frames, g[0].text, g[0].start, -1);
+    if (shown2 + sampleGap(frames) / 2 >= needed) continue;
     const what2 = g.length === 1 ? `"${short(g[0].text)}"` : `"${short(g[0].text)}" and ${g.length - 1} more line${g.length === 2 ? "" : "s"} shown with it`;
     findings.push({
       rule: "text-too-brief",
@@ -4626,8 +4682,8 @@ async function checkVideo(c2, frames, lock) {
     });
   }
   const looks = await Promise.all(frames.map(async (f3) => (await labPixels(f3.png, GRID)).map((p4) => p4.l)));
-  findings.push(...blankRuns(looks, frames, c2), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c2), ...murk(looks));
-  findings.push(...callToAction(c2, frames), ...await letteringInImages(c2, frames));
+  findings.push(...blankRuns(looks, frames, c2), ...stillRuns(looks, frames), ...arrivesMidMove(texts, frames, looks, c2), ...DARK_MOOD.test(lock?.mood ?? "") ? [] : murk(looks));
+  findings.push(...NO_ASK.test(lock?.purpose ?? "") ? [] : callToAction(c2, frames), ...await letteringInImages(c2, frames));
   if (lock) {
     findings.push(...offLock(frames.flatMap((f3) => f3.colors), fonts, lock));
     findings.push(...approvedScript(lock, frames));
@@ -4666,7 +4722,7 @@ function callToAction(c2, frames) {
 }
 function approvedScript(lock, frames) {
   if (!lock.words?.length) return [];
-  const words = frames.map((f3) => new Set(f3.texts.filter((t) => t.opacity >= SEEN).flatMap((t) => wordsOf(t.text))));
+  const words = frames.map((f3) => new Set(f3.texts.filter((t) => t.opacity >= LEGIBLE).flatMap((t) => wordsOf(t.text))));
   const everywhere = new Set(words.flatMap((w) => [...w]));
   const missing = [], brief = [], first = [];
   for (const raw of lock.words) {
@@ -4681,7 +4737,7 @@ function approvedScript(lock, frames) {
     }
     first.push({ line: text, at });
     if (seconds) {
-      const longest = runs(on).reduce((m, [a, b]) => Math.max(m, (b - a + 1) * STEP), 0);
+      const longest = runs(on).reduce((m, [a, b]) => Math.max(m, frames[b].time - frames[a].time + sampleGap(frames)), 0);
       if (longest < seconds * 0.8) brief.push(`"${short(text)}" is up ${longest.toFixed(1)} s of the ${seconds} s approved`);
     }
   }
@@ -4738,6 +4794,29 @@ function inBetween(t, next) {
     (n) => n.text !== t.text && // The same line: a centered line shifts sideways as it grows, so match the row and overlap.
     Math.abs(n.box.y - t.box.y) < 4 && n.box.x < t.box.x + t.box.width && t.box.x < n.box.x + n.box.width && (n.text.startsWith(t.text) || number.test(n.text) && number.test(t.text))
   );
+}
+var sampleGap = (frames) => frames.length > 1 ? frames[1].time - frames[0].time : STEP;
+var opacityOf = (f3, text) => Math.max(0, ...f3?.texts.filter((t) => t.text === text).map((t) => t.opacity) ?? []);
+function legibleEdge(frames, text, i, side) {
+  const here = frames[i], there = frames[i + side];
+  if (!there) return here.time;
+  const a = opacityOf(here, text), b = opacityOf(there, text);
+  const share = a > b ? (a - LEGIBLE) / (a - b) : 0.5;
+  return here.time + share * (there.time - here.time);
+}
+function readable(frames, opacity, c2) {
+  const texts = /* @__PURE__ */ new Map();
+  frames.forEach((f3, i) => {
+    const visible = f3.texts.filter((t) => t.opacity >= opacity);
+    const crowded = visible.length > CROWDED;
+    for (const t of visible) {
+      if (crowded && t.size / c2.height < CAPTION_SIZE) continue;
+      if ((t.text.match(/[\p{L}\p{N}]/gu) ?? []).length < 2) continue;
+      if (inBetween(t, frames[i + 1])) continue;
+      texts.set(t.text, [...texts.get(t.text) ?? [], { frame: f3, box: t }]);
+    }
+  });
+  return texts;
 }
 function longestStillRun(seen, frames) {
   const index = new Map(frames.map((f3, i) => [f3, i]));
@@ -4854,6 +4933,10 @@ async function storyboard(c2, frames) {
   return { png, width, height: H };
 }
 
+// src/versions.ts
+import { basename as basename2, extname as extname2, join as join4 } from "node:path";
+var renderPath = (project, file) => join4(project, LOCK_DIR, "renders", `${basename2(file, extname2(file))}.png`);
+
 // src/stages.ts
 var inProject = (project, file) => isAbsolute(file) ? file : resolve2(project, file);
 var shown = (project, file) => {
@@ -4867,8 +4950,8 @@ async function optionsOf(project, rendered, out) {
   const { options, findings } = await compareOptions(rendered);
   let sheet = out ? inProject(project, out) : void 0;
   if (!sheet) {
-    await mkdir2(join4(project, LOCK_DIR, "sheets"), { recursive: true });
-    sheet = join4(project, LOCK_DIR, "sheets", `options-${stamp()}.png`);
+    await mkdir2(join5(project, LOCK_DIR, "sheets"), { recursive: true });
+    sheet = join5(project, LOCK_DIR, "sheets", `options-${stamp()}.png`);
   }
   await contactSheet(rendered, options, sheet);
   const lines = options.map((o) => `  ${o.number}. ${shown(project, o.file)}`);
@@ -4885,12 +4968,12 @@ ${verdict}`,
     }
   };
 }
-async function runLock(project, file, name, size = {}, style, words) {
-  return lockOf(project, await render(inProject(project, file), size), name, style, words);
+async function runLock(project, file, name, size = {}, style, words, about = {}) {
+  return lockOf(project, await render(inProject(project, file), size), name, style, words, about);
 }
-async function lockOf(project, rendered, name, style, words) {
+async function lockOf(project, rendered, name, style, words, about = {}) {
   const m = await measure(rendered.png);
-  const path = await writeLock(project, name, rendered, m, style, words);
+  const path = await writeLock(project, name, rendered, m, style, words, about);
   const lock = await readLock(project, name);
   return {
     text: `Locked "${name}"${style ? ` (${style})` : ""} from ${shown(project, rendered.file)} (${shown(project, path)}): colors ${lock.colors.join(", ")}; fonts ${lock.fonts.join(", ") || "none"}; ${lock.size.width}\xD7${lock.size.height}${lock.words ? `; ${lock.words.length} approved line${lock.words.length === 1 ? "" : "s"} of words` : ""}. Check the finished design with check_design and lock "${name}".`,
@@ -4902,10 +4985,23 @@ async function runCheck(project, file, lockName, size = {}) {
   const rendered = await render(inProject(project, file), size);
   const lock = lockName ? await readLock(project, lockName) : void 0;
   const r2 = report(shown(project, rendered.file), await check(rendered, await measure(rendered.png), lock));
+  const picture = await saveRender(project, rendered.file, rendered.png);
   return { ...r2, text: `${r2.text}
-${LOOK}` };
+Render: ${shown(project, picture)}
+${LOOK}`, data: { ...r2.data, render: picture } };
 }
-var LOOK = "Now look at the render yourself: does each part say its message to someone who doesn't already know it, and can every word be read at phone size? Fix what doesn't; in the design card, name any part that may still not get its message across.";
+async function saveRender(project, file, png) {
+  const picture = renderPath(project, file);
+  await mkdir2(dirname2(picture), { recursive: true });
+  await writeFile2(picture, png);
+  return picture;
+}
+async function runPreview(project, file, size = {}) {
+  const rendered = await render(inProject(project, file), size);
+  const picture = await saveRender(project, rendered.file, rendered.png);
+  return { text: `Render: ${shown(project, picture)} (${rendered.width}\xD7${rendered.height}). Open it and look.`, findings: [], data: { render: picture } };
+}
+var LOOK = "Now open the render above and look at it yourself: does each part say its message to someone who doesn't already know it, and can every word be read at phone size? Fix what doesn't; in the design card, name any part that may still not get its message across.";
 function report(what2, findings) {
   const errors = findings.filter((f3) => f3.kind === "error").length;
   const suggestions = findings.length - errors;
@@ -4942,6 +5038,17 @@ async function storyboardOf(project, entry, remotion, c2) {
     images: []
   };
 }
+async function runVideoPreview(project, entry, id, seconds = []) {
+  return withVideo(project, entry, async (remotion, find) => {
+    const c2 = find(id);
+    const at = seconds.length ? seconds.map((s) => Math.max(0, Math.min(c2.durationInFrames - 1, Math.round(s * c2.fps)))) : keyFrames(c2);
+    const frames = await remotion.frames(c2, at);
+    const png = frames.length === 1 ? frames[0].png : (await storyboard(c2, frames)).png;
+    const picture = await saveRender(project, `${c2.id}.png`, png);
+    const when = at.map((f3) => `${(f3 / c2.fps).toFixed(2)} s`).join(", ");
+    return { text: `Render: ${shown(project, picture)} (${frames.length === 1 ? "the frame" : "frames"} at ${when}). Open it and look.`, findings: [], data: { render: picture } };
+  });
+}
 async function runVideoOptions(project, entry, ids, out) {
   return withVideo(project, entry, async (remotion, find) => {
     const boards = [];
@@ -4949,10 +5056,10 @@ async function runVideoOptions(project, entry, ids, out) {
     return optionsOf(project, boards, out);
   });
 }
-async function runVideoLock(project, entry, id, name, style, words) {
+async function runVideoLock(project, entry, id, name, style, words, about = {}) {
   return withVideo(project, entry, async (remotion, find) => {
     const c2 = find(id);
-    return lockOf(project, { ...await storyboardOf(project, entry, remotion, c2), width: c2.width, height: c2.height }, name, style, words);
+    return lockOf(project, { ...await storyboardOf(project, entry, remotion, c2), width: c2.width, height: c2.height }, name, style, words, about);
   });
 }
 async function runVideoCheck(project, entry, id, lockName) {
@@ -4976,7 +5083,9 @@ export {
   runCheck,
   runLock,
   runOptions,
+  runPreview,
   runVideoCheck,
   runVideoLock,
-  runVideoOptions
+  runVideoOptions,
+  runVideoPreview
 };
