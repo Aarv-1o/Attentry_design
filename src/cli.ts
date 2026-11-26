@@ -40,6 +40,8 @@ async function main(argv: string[]): Promise<number> {
       name: { type: "string" },
       lock: { type: "string" },
       style: { type: "string" },
+      mood: { type: "string" },
+      purpose: { type: "string" },
       words: { type: "string" },
       size: { type: "string" },
       json: { type: "boolean", default: false },
@@ -60,7 +62,7 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     case "lock":
       if (files.length !== 1 || !values.name) throw new Error("lock takes one file and --name.");
-      print(await runLock(project, files[0], values.name, size, values.style, await wordsFile(values.words)));
+      print(await runLock(project, files[0], values.name, size, values.style, await wordsFile(values.words), { mood: values.mood, purpose: values.purpose }));
       return 0;
     case "check": {
       if (files.length !== 1) throw new Error("check takes one file.");
@@ -75,7 +77,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case "video-lock":
       if (files.length !== 2 || !values.name) throw new Error("video-lock takes an entry, a composition and --name.");
-      print(await runVideoLock(project, files[0], files[1], values.name, values.style, await wordsFile(values.words)));
+      print(await runVideoLock(project, files[0], files[1], values.name, values.style, await wordsFile(values.words), { mood: values.mood, purpose: values.purpose }));
       return 0;
     case "video-check": {
       if (files.length !== 2) throw new Error("video-check takes an entry and a composition.");

@@ -117,6 +117,14 @@ banding (a staircase of four or more wide, faint, same-way color steps across ov
 rows or columns). Chrome dithers SVG and CSS gradients, so banding comes from raster images and
 "gradients" drawn as stacked stripes.
 
+To do, asked by the person 2026-11-26 after the bakin-buns test: the agent adds no detail of its
+own until asked ("add some more design like cream in some buns"). It should add detail unprompted:
+on characters (expression, clothing, props, the small parts that make them someone) and in the
+background (a setting, depth layers, texture, small story props), within the lock's style. Ideas:
+a detail pass in the brief and skill before options and before the finish (Gurney's believable
+detail, Loomis on telling the story in one image); a check for bare areas (large empty or flat
+fills, a subject with few parts), alongside the existing too-smooth suggestion.
+
 Later: hot skin and two eye levels in generated images, OCR on video frames, more direction
 cards, copy.
 

@@ -11,7 +11,7 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    **Then the words**, which carry the message: for a video the script (every caption or spoken
    line, in order, with how long it stays up, written as `line | 3s`); for a picture the headline and every label.
    If the person gave them, use them word for word. If not, draft them from the single message,
-   show them in the chat as a plain list, and wait for a yes or changes before drawing. Don't skip
+   show them in the chat as a plain list headed "The script" (for a picture, "The words"), and wait for a yes or changes before drawing. Don't skip
    this, even when the questions were skipped: a picture can't rescue words that don't say it.
 2. **Options.** Draw 2–5 small options as separate SVG or HTML files (for a video, one storyboard
    file per option with 4–6 key frames). Make them differ in composition, value plan and palette,
@@ -29,11 +29,16 @@ description: Make an illustration or a video with Attentry Design's stages (brie
    keep text and shapes clearly away from edges or clearly overlapping them, never just touching. Pixel art: one pixel grid, no doubled sprites (mixels). 3D look: one key
    light above and to the side, a dimmer fill never mirroring it, soft contact shadows all one way,
    small highlights, no flat ambient sides.
-3. **Lock.** Call `lock_design` with the chosen file, a short name, the style and the approved
-   words (one line each); the check then flags any approved word missing from the design. A pixel-art lock
+   To look at a design while drawing, call `preview_design` (or `preview_video` for a frame); it
+   only renders, so use it instead of `check_options` with copies.
+3. **Lock.** Call `lock_design` with the chosen file, a short name, the style, the approved
+   words (one line each), and the mood and purpose from the brief (a dark mood or a tribute keeps
+   the check from suggesting against them); the check then flags any approved word missing from the design. A pixel-art lock
    is checked for pixel-sharp edges.
-4. **Finish.** Make it full size and call `check_design` with the file and the lock. Fix the
-   errors. Mention the suggestions; don't force them.
+4. **Finish.** Make it full size and call `check_design` with the file and the lock. Open the
+   render it names and look at it. Fix the errors. Mention the suggestions; don't force them.
+   Each check keeps a numbered version (v1, v2…); when the person wants an earlier one back
+   ("the first one was better"), call `restore_version` and edit from there.
 5. **Card.** End with a short design card: the file, the lock, what was found and fixed, and any
    part that may not get its message across. Say so plainly; don't hide weak parts.
 
