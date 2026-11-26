@@ -1,115 +1,164 @@
-/* The editor's own colors and font, so the panel looks like part of VS Code in any theme. */
-body {
-  padding: 4px 14px 16px;
-  color: var(--vscode-foreground);
-  background: var(--vscode-sideBar-background);
-  font-family: var(--vscode-font-family);
-  font-size: var(--vscode-font-size);
-  line-height: 1.45;
+/* Attentry's look, as in its own panel: the site's signal teal is the one accent (what's working,
+   what's in use, focus), red and amber only mark problems, buttons and chips are pills on a
+   hairline, and every gap is a step of one 4px scale. The background stays the theme's; light and
+   high-contrast themes get colors that read on them. At most one filled button shows at a time. */
+* { box-sizing: border-box; }
+:root {
+  --teal: #1fc8a4;
+  --teal-soft: rgba(31, 200, 164, 0.14);
+  --red: #ff6b6b;
+  --amber: #ffc24b;
+  --ink: var(--vscode-foreground);
+  --muted: var(--vscode-descriptionForeground);
+  --surface: color-mix(in srgb, var(--vscode-foreground) 5%, transparent);
+  --surface-2: color-mix(in srgb, var(--vscode-foreground) 9%, transparent);
+  --hairline: color-mix(in srgb, var(--vscode-foreground) 12%, transparent);
+  --strong: #f2f4f7; /* the one filled button: white, as on the site */
+  --strong-ink: #0e1116;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --radius: 6px;
+  --mono: var(--vscode-editor-font-family, ui-monospace, monospace);
+  --error: var(--red);
+  --warning: var(--amber);
+  --ok: var(--teal);
+  --accent: var(--teal);
 }
-section { margin: 12px 0 18px; }
-h2 {
-  margin: 0 0 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground));
+/* On a light theme the site's colors are too pale to read: the same hues, darker. */
+body.vscode-light {
+  --teal: #0b8a70;
+  --teal-soft: rgba(11, 138, 112, 0.12);
+  --red: #c93838;
+  --amber: #9a6400;
+  --strong: #0e1116;
+  --strong-ink: #f2f4f7;
 }
-p { margin: 0 0 6px; }
-.line { display: flex; gap: 8px; align-items: baseline; }
-.mark { width: 1em; flex: none; text-align: center; }
-.good .mark { color: var(--vscode-testing-iconPassed, #3fb950); }
-.bad .mark { color: var(--vscode-errorForeground); }
-.hint, .muted, .source { color: var(--vscode-descriptionForeground); }
-.row { display: flex; gap: 6px; margin-top: 6px; }
-
-button {
-  font: inherit;
-  border: none;
-  border-radius: 2px;
-  padding: 4px 12px;
-  cursor: pointer;
-}
-button.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
-button.primary:hover { background: var(--vscode-button-hoverBackground); }
-button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
-button.link { background: none; padding: 0; color: var(--vscode-textLink-foreground); text-align: left; }
-button.link:hover { text-decoration: underline; }
-button.small { font-size: 12px; }
-button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
-
-.command {
-  display: block;
-  padding: 6px 8px;
-  border-radius: 2px;
-  background: var(--vscode-textCodeBlock-background);
-  font-family: var(--vscode-editor-font-family);
-  font-size: 12px;
-  word-break: break-all;
+/* High contrast: the theme's own colors and borders, which the person chose to see. */
+body.vscode-high-contrast, body.vscode-high-contrast-light {
+  --error: var(--vscode-editorError-foreground);
+  --warning: var(--vscode-editorWarning-foreground);
+  --ok: var(--vscode-testing-iconPassed, var(--vscode-foreground));
+  --accent: var(--vscode-focusBorder);
+  --hairline: var(--vscode-contrastBorder, var(--vscode-foreground));
+  --strong: var(--vscode-button-background);
+  --strong-ink: var(--vscode-button-foreground);
 }
 
-.working {
-  padding: 10px 12px;
-  border-radius: 4px;
-  border: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent));
-  background: var(--vscode-editorWidget-background);
-}
-.tip { margin-top: 8px; }
-.tip p:first-child { margin-bottom: 4px; }
-.source { font-size: 12px; font-style: italic; }
-.spinner {
-  width: 10px;
-  height: 10px;
-  flex: none;
-  align-self: center;
-  border: 2px solid var(--vscode-progressBar-background);
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+body { margin: 0; padding: 0 0 var(--space-4); color: var(--ink); font: var(--vscode-font-size) var(--vscode-font-family); line-height: 1.45; font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; text-align: left; }
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }
+p { margin: 0; }
+code { font-family: var(--mono); font-size: 0.92em; }
+/* A part's name, as the site's eyebrows: small capitals, so the content under it leads. */
+h2 { margin: 0; font-size: 0.8em; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.quiet { color: var(--muted); font-size: 0.92em; margin-top: var(--space-2); }
+.link { color: var(--teal); }
+.link:hover { text-decoration: underline; text-underline-offset: 2px; }
 
-.locks { list-style: none; margin: 0; padding: 0; }
-.lock { padding: 8px 0; border-top: 1px solid var(--vscode-panel-border, var(--vscode-widget-border, transparent)); }
-.lock:first-child { border-top: none; padding-top: 0; }
-.lock .name { font-weight: 600; margin-bottom: 2px; }
-.swatches { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
-.swatch { width: 16px; height: 16px; border-radius: 2px; outline: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.35)); }
-.words { overflow-wrap: anywhere; }
+/* The parts, flat on one surface with hairlines between. */
+section { padding: var(--space-3) var(--space-4) var(--space-4); border-top: 1px solid var(--hairline); }
+section:first-child { border-top: 0; }
+.who { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 
-.folder { display: flex; gap: 8px; align-items: center; margin: 8px 0 4px; }
-.folder select {
-  flex: 1;
-  min-width: 0;
-  padding: 2px 4px;
-  color: var(--vscode-dropdown-foreground);
-  background: var(--vscode-dropdown-background);
-  border: 1px solid var(--vscode-dropdown-border, transparent);
-  font: inherit;
+/* The project menu, for a folder with several projects in it. */
+.project { display: flex; align-items: center; gap: var(--space-2); }
+.project label { color: var(--muted); font-size: 0.92em; }
+.project select { flex: 1; min-width: 0; padding: 2px 6px; border-radius: var(--radius); border: 1px solid var(--vscode-dropdown-border, var(--hairline)); background: var(--vscode-dropdown-background); color: var(--vscode-dropdown-foreground); font: inherit; }
+.project-name { color: var(--muted); font-size: 0.92em; overflow-wrap: anywhere; }
+
+/* A chip with how a part is: a dot, then a word or two. */
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 0 var(--space-2); border: 1px solid var(--hairline); border-radius: 999px; font-size: 0.85em; line-height: 18px; color: var(--muted); white-space: nowrap; }
+.pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.pill.ok i, .pill.live i { background: var(--ok); box-shadow: 0 0 0 3px var(--teal-soft); }
+.pill.live { color: var(--ink); }
+.pill.live i { animation: pulse 1.8s ease-in-out infinite; }
+.pill.warn i { background: var(--warning); }
+.pill.bad i { background: var(--error); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* While a check runs: what it's doing, then a tip on a surface, its edge in the accent. */
+.doing { margin-top: var(--space-3); }
+.doing b { font-weight: 600; }
+.tip { margin-top: var(--space-3); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; background: var(--surface); }
+.tip .source { margin-top: var(--space-1); color: var(--muted); font-size: 0.85em; font-style: italic; }
+.sweep { position: relative; height: 1px; margin-top: var(--space-3); background: var(--hairline); overflow: hidden; }
+.sweep::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 35% 100%; background-repeat: no-repeat; animation: sweep 1.3s ease-in-out infinite; }
+@keyframes sweep { from { background-position: -35% 0; } to { background-position: 135% 0; } }
+
+/* Tabs: a pill track; the chosen one lifts onto a surface. */
+.tabs { display: inline-flex; gap: 2px; margin-top: var(--space-3); padding: 2px; border-radius: 999px; border: 1px solid var(--hairline); }
+.tabs button { padding: 1px var(--space-3); border-radius: 999px; color: var(--muted); font-size: 0.92em; }
+.tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--ink); cursor: default; }
+.tabs button:not([aria-selected="true"]):hover { color: var(--ink); }
+
+/* Setup: one line when all is ready, a check per line when something needs the person. */
+details summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+details summary::-webkit-details-marker { display: none; }
+details summary::before { content: ""; width: 0; height: 0; border-left: 4px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; opacity: 0.7; transition: transform 0.12s; }
+details[open] > summary::before { transform: rotate(90deg); }
+details summary .pill { margin-left: auto; }
+.checks { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+.checks li { display: grid; grid-template-columns: 1.1em minmax(0, 1fr); gap: 6px; overflow-wrap: anywhere; }
+.checks .mark { font-weight: 600; color: var(--muted); }
+.checks .ok .mark { color: var(--ok); }
+.checks .bad .mark { color: var(--error); }
+.command { display: block; margin-top: var(--space-2); padding: 6px var(--space-2); border-radius: var(--radius); background: var(--surface); border: 1px solid var(--hairline); font-family: var(--mono); font-size: 0.85em; overflow-wrap: anywhere; }
+
+/* Buttons: pills, sized to their words. One filled (white, as on the site); the rest quiet. */
+.primary, .secondary { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; margin-top: var(--space-3); padding: 2px var(--space-3); border-radius: 999px; font-weight: 500; font-size: 0.92em; }
+.primary { background: var(--strong); color: var(--strong-ink); }
+.primary:hover { opacity: 0.88; }
+.secondary { border: 1px solid var(--hairline); background: var(--surface); }
+.secondary:hover { background: var(--surface-2); }
+.buttons { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* Locks: a card per lock, the one in use first and edged in the accent. */
+.locks { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-3); }
+.lock { padding: var(--space-2) var(--space-3) var(--space-3); border: 1px solid var(--hairline); border-radius: var(--radius); }
+.lock.in-use { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.lock .title { display: flex; align-items: center; gap: var(--space-2); }
+.lock .name { font-weight: 600; overflow-wrap: anywhere; }
+.lock .name:hover { text-decoration: underline; text-underline-offset: 2px; }
+.lock .title .pill { margin-left: auto; }
+.lock .meta { color: var(--muted); font-size: 0.92em; }
+.swatches { display: flex; flex-wrap: wrap; gap: 3px; margin-top: var(--space-2); }
+.swatch { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hairline); }
+.words { margin-top: var(--space-2); overflow-wrap: anywhere; }
+
+/* A lock's designs: one dense row each, like Attentry's findings; the row opens the design. */
+.designs { margin-top: var(--space-2); }
+.designs h3 { margin: var(--space-2) 0 2px; font-size: 0.78em; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.row { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; column-gap: var(--space-2); align-items: baseline; width: calc(100% + 12px); padding: 2px 6px; margin: 0 -6px; border-radius: var(--radius); }
+.row:hover, .row:focus-visible { background: var(--surface); }
+.row .file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .when { color: var(--muted); font-size: 0.85em; white-space: nowrap; }
+.glyph { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); align-self: center; }
+.glyph.option { background: transparent; box-shadow: inset 0 0 0 1px var(--muted); }
+.lock .lockfile { margin-top: var(--space-2); font-size: 0.85em; }
+.error-text { color: var(--error); margin-top: var(--space-1); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-.segments { display: flex; margin-bottom: 6px; }
-.seg {
-  flex: 1;
-  padding: 3px 6px;
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-  border-radius: 0;
-}
-.seg:first-child { border-radius: 2px 0 0 2px; }
-.seg:last-child { border-radius: 0 2px 2px 0; }
-.seg.on { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
-.setup summary { cursor: pointer; list-style-position: outside; }
-.setup summary h2 { display: inline; }
-.setup[open] summary { margin-bottom: 8px; }
-.good.small { font-size: 12px; color: var(--vscode-testing-iconPassed, #3fb950); }
-.title { display: flex; gap: 8px; align-items: baseline; margin-bottom: 2px; }
-.badge {
-  padding: 0 6px;
-  border-radius: 8px;
-  font-size: 11px;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-}
+
+/* A lock's versions as a tree: a line per branch in the gutter, a dot per version, the current
+   one ringed in the accent; a thumbnail of each render. The row opens the version; Restore shows
+   on hover or focus. */
+.tree { margin-top: 2px; }
+.vrow { display: flex; align-items: center; gap: var(--space-2); height: 36px; margin: 0 -6px; padding: 0 6px; border-radius: var(--radius); }
+.vrow:hover, .vrow:focus-within { background: var(--surface); }
+.gutter { flex: none; overflow: visible; }
+.gutter .edge { stroke: var(--hairline); stroke-width: 1.5; }
+.gutter .node { fill: var(--muted); }
+.gutter .node.root { fill: var(--vscode-sideBar-background, transparent); stroke: var(--ok); stroke-width: 1.5; }
+.gutter .node.current { fill: var(--ok); stroke: var(--teal-soft); stroke-width: 4; paint-order: stroke; }
+.vmain { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-2); height: 100%; }
+.vname { font-weight: 600; }
+.vrow .when { margin-left: auto; color: var(--muted); font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vrow .pill { margin-left: auto; }
+.thumb { width: 28px; height: 28px; flex: none; border-radius: 4px; object-fit: cover; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hairline); }
+.restore { display: none; flex: none; padding: 0 var(--space-2); border: 1px solid var(--hairline); border-radius: 999px; font-size: 0.85em; line-height: 18px; color: var(--teal); }
+.vrow:hover .restore, .vrow:focus-within .restore { display: inline-block; }
+.restore:hover { background: var(--surface-2); }

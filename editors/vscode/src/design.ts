@@ -1,9 +1,10 @@
-// The project's side of the panel: its design locks, what's running, the last request's kind and the
-// pin. Read with the plugin's own code, so the panel and the checks agree on what each file means.
+// The project's side of the panel: its design locks and their designs, what's running, the last
+// request's kind and the pin. Read with the plugin's own code, so the panel and the checks agree
+// on what each file means.
 import { join } from "node:path";
 import { existingLocks, type DesignKind } from "../../../src/brief.ts";
 import { LOCK_DIR, readLock, type DesignLock } from "../../../src/lock.ts";
-import { clearStatus, LAST_RUN, PIN, readStatus, RUNNING, TASK, writeStatus, type LastRun, type Pin, type Running, type Task } from "../../../src/status.ts";
+import { clearStatus, DESIGNS, LAST_RUN, PIN, readStatus, RUNNING, TASK, writeStatus, type Designs, type LastRun, type Pin, type Running, type Task } from "../../../src/status.ts";
 
 export type LockEntry =
   | { name: string; path: string; lock: DesignLock }
@@ -26,16 +27,17 @@ export async function locks(project: string): Promise<LockEntry[]> {
 // A running marker older than this was left by a session that was closed mid-check.
 const STALE = 10 * 60_000;
 
-export type ProjectStatus = { running?: Running; last?: LastRun; task?: Task; pin?: Pin };
+export type ProjectStatus = { running?: Running; last?: LastRun; task?: Task; pin?: Pin; designs?: Designs };
 
 export async function projectStatus(project: string): Promise<ProjectStatus> {
-  const [running, last, task, pin] = await Promise.all([
+  const [running, last, task, pin, designs] = await Promise.all([
     readStatus<Running>(project, RUNNING),
     readStatus<LastRun>(project, LAST_RUN),
     readStatus<Task>(project, TASK),
     readStatus<Pin>(project, PIN),
+    readStatus<Designs>(project, DESIGNS),
   ]);
-  return { running: running && Date.now() - running.started < STALE ? running : undefined, last, task, pin };
+  return { running: running && Date.now() - running.started < STALE ? running : undefined, last, task, pin, designs };
 }
 
 /** Pins the kind every design request gets, or back to Auto (the guess from each request). */

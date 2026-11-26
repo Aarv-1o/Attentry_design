@@ -7,7 +7,7 @@ import { Sidebar } from "./sidebar.ts";
 export function activate(context: vscode.ExtensionContext): void {
   const sidebar = new Sidebar(context.extensionUri, context.workspaceState);
   const watcher = vscode.workspace.createFileSystemWatcher(`**/${LOCK_DIR}/*.json`);
-  const changed = () => void sidebar.projectChanged();
+  const changed = (file?: vscode.Uri) => void sidebar.projectChanged(file);
   void sidebar.start();
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("attentryDesign.panel", sidebar),
@@ -16,6 +16,6 @@ export function activate(context: vscode.ExtensionContext): void {
     watcher.onDidCreate(changed),
     watcher.onDidChange(changed),
     watcher.onDidDelete(changed),
-    vscode.workspace.onDidChangeWorkspaceFolders(changed),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => changed()),
   );
 }

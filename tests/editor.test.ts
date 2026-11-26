@@ -1,13 +1,13 @@
 // The editor panel's reading of the project and of Claude Code's setup (the parts without VS Code).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { locks, projectStatus, setPin } from "../editors/vscode/src/design.ts";
 import { libraries, PLUGIN } from "../editors/vscode/src/claude.ts";
 import { LOCK_DIR } from "../src/lock.ts";
-import { RUNNING } from "../src/status.ts";
+import { DESIGNS, noteDesigns, readStatus, restoreDesign, RUNNING, type Designs } from "../src/status.ts";
 import { brief } from "../src/brief.ts";
 import { INSTALLING, RUNTIME } from "../src/limits.ts";
 
@@ -68,4 +68,49 @@ test("libraries: beside the plugin or in its data folder; installing while the i
     if (before === undefined) delete process.env.CLAUDE_CONFIG_DIR;
     else process.env.CLAUDE_CONFIG_DIR = before;
   }
+});
+
+test("designs: a lock keeps its round of options and its pick; each check keeps a numbered version", async () => {
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  const abs = (f: string) => join(project, f).replaceAll("\\", "/");
+  const poster = join(project, "poster.svg");
+  const tree = async () => (await readStatus<Designs>(project, DESIGNS))!.locks.buns;
+  const check = (file = "poster.svg") => noteDesigns(project, { tool: "check_design", file, lock: "buns" });
+  await noteDesigns(project, { tool: "check_options", files: ["a.svg", "b.svg", "c.svg"] });
+  await noteDesigns(project, { tool: "lock_design", file: "b.svg", name: "buns" });
+  assert.equal((await tree()).picked, abs("b.svg"));
+  assert.deepEqual((await tree()).options, ["a.svg", "b.svg", "c.svg"].map(abs));
+
+  await writeFile(poster, "<svg>1</svg>");
+  assert.match((await check())!, /v1 of "buns"/);
+  await writeFile(poster, "<svg>2</svg>");
+  assert.match((await check())!, /v2 of "buns", from v1/);
+  assert.match((await check())!, /v2 of "buns"/, "checked again unchanged: no new version");
+  assert.equal((await tree()).versions.length, 2);
+
+  // Back to v1, then a change: a branch from v1, not a loss of v2.
+  await restoreDesign(project, "buns", 1);
+  assert.equal(await readFile(poster, "utf8"), "<svg>1</svg>");
+  await writeFile(poster, "<svg>3</svg>");
+  assert.match((await check())!, /v3 of "buns", from v1/);
+  // Work not checked yet is kept as a version before another one is put back.
+  await writeFile(poster, "<svg>4</svg>");
+  await restoreDesign(project, "buns", 2);
+  assert.equal(await readFile(poster, "utf8"), "<svg>2</svg>");
+  const v = (await tree()).versions;
+  assert.deepEqual(v.map((x) => [x.n, x.parent]), [[1, undefined], [2, 1], [3, 1], [4, 3]]);
+  assert.equal(await readFile(v[3].snapshot, "utf8"), "<svg>4</svg>");
+  assert.equal((await tree()).head, 2);
+  await assert.rejects(restoreDesign(project, "buns", 9), /no v9/);
+});
+
+test("designs: a lock saved before designs were kept starts from the option it was picked from", async () => {
+  const project = await mkdtemp(join(tmpdir(), "ad-"));
+  await mkdir(join(project, LOCK_DIR), { recursive: true });
+  await writeFile(join(project, LOCK_DIR, "old.lock.json"), lock("old", "2026-11-01T00:00:00Z"));
+  await writeFile(join(project, "final.svg"), "<svg/>");
+  await noteDesigns(project, { tool: "check_design", file: "final.svg", lock: "old" });
+  const old = (await readStatus<Designs>(project, DESIGNS))!.locks.old;
+  assert.equal(old.picked, join(project, "art/a.svg").replaceAll("\\", "/"));
+  assert.equal(old.versions.length, 1);
 });
